@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { Icon, kindIcon } from "@/icons/Icon";
-import { TREE } from "@/data";
+import { PreviewPane } from "@/components/PreviewPane";
+import { TREE, resolveSelection } from "@/data";
 import type { FileNode, DensityTokens } from "@/types";
 
 interface ColumnsProps {
@@ -71,6 +72,11 @@ export function Columns({ selection, onSelect, onNavigate, density, focusedCol, 
           width={density.colW}
         />
       ))}
+      <PreviewPane
+        node={resolveSelection(TREE, selection)}
+        density={density}
+        width={Math.max(360, density.colW + 80)}
+      />
     </div>
   );
 }
