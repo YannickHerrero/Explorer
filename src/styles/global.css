@@ -74,6 +74,11 @@ input::placeholder {
   background: rgba(0, 0, 0, 0.25);
 }
 
+/* Context menu item hover */
+.ctx-item:hover {
+  background: var(--paper-deep);
+}
+
 /* File row hover */
 .file-row:hover {
   background: var(--paper-deep);

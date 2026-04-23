@@ -3,15 +3,21 @@ import { Chrome } from "@/components/Chrome";
 import { Sidebar, SIDEBAR_DATA } from "@/components/Sidebar";
 import { Columns } from "@/components/Columns";
 import { StatusBar } from "@/components/StatusBar";
+import { CommandPalette } from "@/overlays/CommandPalette";
+import { SearchOverlay } from "@/overlays/SearchOverlay";
+import { Settings } from "@/overlays/Settings";
+import { Cheatsheet } from "@/overlays/Cheatsheet";
+import { ContextMenu } from "@/overlays/ContextMenu";
 import { useTheme } from "@/hooks/useTheme";
 import { useKeyboardNav } from "@/hooks/useKeyboardNav";
 import { DENSITY } from "@/themes/tokens";
 import { TREE, resolveSelection, buildPathNames } from "@/data";
-import type { DensityKey, SidebarItem, FileNode } from "@/types";
+import { THEMES } from "@/themes";
+import type { DensityKey, SidebarItem, FileNode, ThemeKey, Command } from "@/types";
 
 function App() {
-  const { themeKey } = useTheme("sage");
-  const [densityKey] = useState<DensityKey>("comfortable");
+  const { themeKey, setThemeKey } = useTheme("sage");
+  const [densityKey, setDensityKey] = useState<DensityKey>("comfortable");
   const density = DENSITY[densityKey];
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
@@ -26,6 +32,7 @@ function App() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [cheatsheetOpen, setCheatsheetOpen] = useState(false);
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   const [toast, setToast] = useState<string | null>(null);
 
   const showToast = useCallback((msg: string) => {
@@ -85,6 +92,22 @@ function App() {
     }
   }, [histIdx, history]);
 
+  const runCommand = (cmd: Command) => {
+    if (cmd.id.startsWith("c-theme-")) {
+      const t = cmd.id.replace("c-theme-", "") as ThemeKey;
+      setThemeKey(t);
+      showToast(`Theme: ${THEMES[t].name}`);
+    } else if (cmd.id === "c-settings") {
+      setSettingsOpen(true);
+    } else if (cmd.id === "c-shortcuts") {
+      setCheatsheetOpen(true);
+    } else if (cmd.id === "c-toggle-sidebar") {
+      setSidebarOpen((v) => !v);
+    } else {
+      showToast(cmd.name);
+    }
+  };
+
   const overlaysOpen = paletteOpen || searchOpen || settingsOpen || cheatsheetOpen;
 
   useKeyboardNav({
@@ -105,6 +128,7 @@ function App() {
       setSearchOpen(false);
       setSettingsOpen(false);
       setCheatsheetOpen(false);
+      setContextMenu(null);
     },
   });
 
@@ -130,6 +154,12 @@ function App() {
         background: themeKey === "ink" ? "#0a0a0a" : "#1a1915",
         padding: 24,
         fontFamily: "var(--font-sans)",
+      }}
+      onContextMenu={(e) => {
+        if ((e.target as HTMLElement).closest(".file-row")) {
+          e.preventDefault();
+          setContextMenu({ x: e.clientX, y: e.clientY });
+        }
       }}
     >
       <div
@@ -179,6 +209,30 @@ function App() {
         </div>
 
         <StatusBar node={currentNode} onSettings={() => setSettingsOpen(true)} />
+
+        {/* Overlays */}
+        <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} onRun={runCommand} />
+        <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
+        <Settings
+          open={settingsOpen}
+          onClose={() => setSettingsOpen(false)}
+          theme={themeKey}
+          setTheme={setThemeKey}
+          density={densityKey}
+          setDensity={setDensityKey}
+          sidebarOpen={sidebarOpen}
+          setSidebarOpen={setSidebarOpen}
+        />
+        <Cheatsheet open={cheatsheetOpen} onClose={() => setCheatsheetOpen(false)} />
+
+        {contextMenu && (
+          <ContextMenu
+            x={contextMenu.x}
+            y={contextMenu.y}
+            onClose={() => setContextMenu(null)}
+            onRun={(item) => showToast(item.name)}
+          />
+        )}
 
         {/* Toast */}
         {toast && (
