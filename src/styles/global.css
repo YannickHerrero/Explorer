@@ -74,6 +74,11 @@ input::placeholder {
   background: rgba(0, 0, 0, 0.25);
 }
 
+/* File row hover */
+.file-row:hover {
+  background: var(--paper-deep);
+}
+
 /* Toast animation */
 @keyframes toast-in {
   from {
