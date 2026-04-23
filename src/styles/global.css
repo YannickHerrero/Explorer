@@ -40,6 +40,16 @@ button {
   background: var(--paper-deep) !important;
 }
 
+/* Sidebar item hover */
+.sidebar-item:hover {
+  background: var(--paper-deep);
+}
+
+.sidebar-item[style*="background: var(--accent)"]:hover {
+  background: var(--accent) !important;
+  filter: brightness(1.05);
+}
+
 input::placeholder {
   color: var(--muted);
   opacity: 0.8;

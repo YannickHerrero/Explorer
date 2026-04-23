@@ -1,11 +1,17 @@
 import { useState } from "react";
 import { Chrome } from "@/components/Chrome";
+import { Sidebar } from "@/components/Sidebar";
 import { StatusBar } from "@/components/StatusBar";
 import { useTheme } from "@/hooks/useTheme";
+import { DENSITY } from "@/themes/tokens";
+import type { DensityKey, SidebarItem } from "@/types";
 
 function App() {
   const { themeKey } = useTheme("sage");
+  const [densityKey] = useState<DensityKey>("comfortable");
+  const density = DENSITY[densityKey];
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [activeSidebarId, setActiveSidebarId] = useState("projects");
 
   // Overlay state
   const [, setPaletteOpen] = useState(false);
@@ -14,6 +20,10 @@ function App() {
   const [cheatsheetOpen, setCheatsheetOpen] = useState(false);
 
   const pathNames = ["maya", "Projects", "explorer-app", "src"];
+
+  const handleSidebarNav = (item: SidebarItem) => {
+    setActiveSidebarId(item.id);
+  };
 
   return (
     <div
@@ -55,25 +65,14 @@ function App() {
           searchOpen={searchOpen}
         />
 
-        {/* Main content area - placeholder */}
         <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
           {sidebarOpen && (
-            <div
-              style={{
-                width: 230,
-                flexShrink: 0,
-                background: "var(--paper-alt)",
-                borderRight: "1px solid var(--line)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "var(--muted)",
-                fontFamily: "var(--font-sans)",
-                fontSize: 12,
-              }}
-            >
-              Sidebar
-            </div>
+            <Sidebar
+              width={density.sidebarW}
+              activeId={activeSidebarId}
+              onNavigate={handleSidebarNav}
+              density={density}
+            />
           )}
           <div
             style={{
