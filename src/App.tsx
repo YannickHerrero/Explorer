@@ -4,6 +4,7 @@ import { Sidebar, SIDEBAR_DATA } from "@/components/Sidebar";
 import { Columns } from "@/components/Columns";
 import { StatusBar } from "@/components/StatusBar";
 import { useTheme } from "@/hooks/useTheme";
+import { useKeyboardNav } from "@/hooks/useKeyboardNav";
 import { DENSITY } from "@/themes/tokens";
 import { TREE, resolveSelection, buildPathNames } from "@/data";
 import type { DensityKey, SidebarItem, FileNode } from "@/types";
@@ -21,10 +22,16 @@ function App() {
   const [histIdx, setHistIdx] = useState(0);
 
   // Overlay state
-  const [, setPaletteOpen] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
-  const [, setSettingsOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [cheatsheetOpen, setCheatsheetOpen] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+
+  const showToast = useCallback((msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 1800);
+  }, []);
 
   const navigateTo = useCallback((newSel: string[], focused?: number) => {
     setSelection(newSel);
@@ -64,19 +71,42 @@ function App() {
     }
   };
 
-  const goBack = () => {
+  const goBack = useCallback(() => {
     if (histIdx > 0) {
       setHistIdx((i) => i - 1);
       setSelection(history[histIdx - 1]);
     }
-  };
+  }, [histIdx, history]);
 
-  const goFwd = () => {
+  const goFwd = useCallback(() => {
     if (histIdx < history.length - 1) {
       setHistIdx((i) => i + 1);
       setSelection(history[histIdx + 1]);
     }
-  };
+  }, [histIdx, history]);
+
+  const overlaysOpen = paletteOpen || searchOpen || settingsOpen || cheatsheetOpen;
+
+  useKeyboardNav({
+    selection,
+    focusedCol,
+    setFocusedCol,
+    navigateTo,
+    goBack,
+    goFwd,
+    overlaysOpen,
+    onTogglePalette: () => setPaletteOpen((v) => !v),
+    onToggleSearch: () => setSearchOpen((v) => !v),
+    onToggleSettings: () => setSettingsOpen((v) => !v),
+    onToggleCheatsheet: () => setCheatsheetOpen((v) => !v),
+    onToast: showToast,
+    onDismissOverlays: () => {
+      setPaletteOpen(false);
+      setSearchOpen(false);
+      setSettingsOpen(false);
+      setCheatsheetOpen(false);
+    },
+  });
 
   const pathNames = useMemo(() => buildPathNames(TREE, selection), [selection]);
   const currentNode = useMemo(() => resolveSelection(TREE, selection), [selection]);
@@ -149,6 +179,29 @@ function App() {
         </div>
 
         <StatusBar node={currentNode} onSettings={() => setSettingsOpen(true)} />
+
+        {/* Toast */}
+        {toast && (
+          <div
+            style={{
+              position: "absolute",
+              bottom: 60,
+              left: "50%",
+              transform: "translateX(-50%)",
+              background: "var(--ink)",
+              color: "var(--paper)",
+              padding: "8px 16px",
+              borderRadius: 6,
+              fontFamily: "var(--font-sans)",
+              fontSize: 12.5,
+              boxShadow: "0 6px 20px rgba(0,0,0,0.2)",
+              zIndex: 100,
+              animation: "toast-in 200ms ease",
+            }}
+          >
+            {toast}
+          </div>
+        )}
       </div>
     </div>
   );
