@@ -3,6 +3,33 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 
+#[derive(Debug, Serialize)]
+pub struct UserDirs {
+    pub home: String,
+    pub desktop: Option<String>,
+    pub documents: Option<String>,
+    pub downloads: Option<String>,
+    pub pictures: Option<String>,
+    pub music: Option<String>,
+    pub videos: Option<String>,
+}
+
+#[tauri::command]
+pub fn get_user_dirs() -> Result<UserDirs, String> {
+    let home = dirs::home_dir()
+        .ok_or("Cannot determine home directory")?;
+
+    Ok(UserDirs {
+        home: home.to_string_lossy().to_string(),
+        desktop: dirs::desktop_dir().map(|p| p.to_string_lossy().to_string()),
+        documents: dirs::document_dir().map(|p| p.to_string_lossy().to_string()),
+        downloads: dirs::download_dir().map(|p| p.to_string_lossy().to_string()),
+        pictures: dirs::picture_dir().map(|p| p.to_string_lossy().to_string()),
+        music: dirs::audio_dir().map(|p| p.to_string_lossy().to_string()),
+        videos: dirs::video_dir().map(|p| p.to_string_lossy().to_string()),
+    })
+}
+
 #[derive(Debug, Serialize, Clone)]
 pub struct FileEntry {
     pub id: String,
