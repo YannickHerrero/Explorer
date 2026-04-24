@@ -7,6 +7,7 @@ interface ChromeProps {
   onBack: () => void;
   onFwd: () => void;
   onPalette: () => void;
+  onFolderPalette: () => void;
   onSearch: () => void;
   onToggleSidebar: () => void;
   onToggleCheatsheet: () => void;
@@ -37,6 +38,7 @@ export function Chrome({
   onBack,
   onFwd,
   onPalette,
+  onFolderPalette,
   onSearch,
   onToggleSidebar,
   onToggleCheatsheet,
@@ -114,7 +116,7 @@ export function Chrome({
 
       {/* Right side */}
       <div style={{ display: "flex", gap: 2, alignItems: "center" }}>
-        <PaletteButton onClick={onPalette} />
+        <PaletteButton onClick={onFolderPalette} />
         <IconBtn name="search" onClick={onSearch} active={searchOpen} title="Search  Ctrl+F" />
         <IconBtn name="keyboard" onClick={onToggleCheatsheet} title="Shortcuts  Ctrl+/" />
       </div>
@@ -185,7 +187,7 @@ function PaletteButton({ onClick }: { onClick: () => void }) {
       <Icon name="search" size={11} />
       <span style={{ color: "var(--muted)" }}>Go to…</span>
       <span style={{ display: "inline-flex", gap: 1 }}>
-        <Kbd k="Ctrl" /><Kbd k="K" />
+        <Kbd k="Ctrl" /><Kbd k="P" />
       </span>
     </button>
   );

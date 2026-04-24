@@ -368,6 +368,7 @@ function App() {
           canBack={nav.histIdx > 0}
           canFwd={nav.histIdx < nav.historyLength - 1}
           onPalette={() => setPaletteOpen(true)}
+          onFolderPalette={() => setFolderPaletteOpen(true)}
           onSearch={() => setSearchOpen(!searchOpen)}
           onToggleSidebar={() => handleSetSidebarOpen(!sidebarOpen)}
           onToggleCheatsheet={() => setCheatsheetOpen(!cheatsheetOpen)}
