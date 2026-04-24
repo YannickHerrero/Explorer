@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { Icon, Kbd } from "@/icons/Icon";
+import { fuzzyFilter } from "@/utils/fuzzy";
 import type { SidebarSection, SidebarItem } from "@/types";
 
 interface FolderPaletteProps {
@@ -30,9 +31,7 @@ export function FolderPalette({ open, onClose, onNavigate, sections }: FolderPal
   }, [sections]);
 
   const filtered = useMemo(() => {
-    const ql = q.trim().toLowerCase();
-    if (!ql) return allItems;
-    return allItems.filter((item) => item.name.toLowerCase().includes(ql));
+    return fuzzyFilter(allItems, q, (item) => item.name);
   }, [q, allItems]);
 
   const selectedRef = useCallback((node: HTMLDivElement | null) => {

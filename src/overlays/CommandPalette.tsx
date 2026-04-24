@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { Icon, Kbd } from "@/icons/Icon";
 import { COMMANDS } from "@/data/commands";
+import { fuzzyFilter } from "@/utils/fuzzy";
 import type { Command } from "@/types";
 
 interface PaletteProps {
@@ -23,11 +24,7 @@ export function CommandPalette({ open, onClose, onRun }: PaletteProps) {
   }, [open]);
 
   const filtered = useMemo(() => {
-    const ql = q.trim().toLowerCase();
-    if (!ql) return COMMANDS;
-    return COMMANDS.filter(
-      (c) => c.name.toLowerCase().includes(ql) || c.group.toLowerCase().includes(ql),
-    );
+    return fuzzyFilter(COMMANDS, q, (c) => `${c.name} ${c.group}`);
   }, [q]);
 
   const grouped = useMemo(() => {
