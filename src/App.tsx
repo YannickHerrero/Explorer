@@ -10,38 +10,21 @@ import { Cheatsheet } from "@/overlays/Cheatsheet";
 import { ContextMenu } from "@/overlays/ContextMenu";
 import { useTheme } from "@/hooks/useTheme";
 import { useKeyboardNav } from "@/hooks/useKeyboardNav";
+import { useRealFileTree } from "@/hooks/useRealFileTree";
+import { useSidebarDirs } from "@/hooks/useSidebarDirs";
 import { DENSITY } from "@/themes/tokens";
 import { TREE, resolveSelection, buildPathNames } from "@/data";
 import { THEMES } from "@/themes";
 import type { DensityKey, SidebarItem, FileNode, ThemeKey, Command } from "@/types";
 
-function App() {
-  const { themeKey, setThemeKey } = useTheme("sage");
-  const [densityKey, setDensityKey] = useState<DensityKey>("comfortable");
-  const density = DENSITY[densityKey];
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+const IS_TAURI = "__TAURI_INTERNALS__" in window;
 
-  // Use mock data tree (real file system integration happens in Tauri mode)
-  const tree = TREE;
-
-  // Navigation state
+// ── Mock-mode navigation (used when running outside Tauri) ──────────
+function useMockNav() {
   const [selection, setSelection] = useState(["root", "projects", "explorer", "src", "s1"]);
   const [focusedCol, setFocusedCol] = useState(3);
   const [history, setHistory] = useState([["root", "projects", "explorer", "src", "s1"]]);
   const [histIdx, setHistIdx] = useState(0);
-
-  // Overlay state
-  const [paletteOpen, setPaletteOpen] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const [cheatsheetOpen, setCheatsheetOpen] = useState(false);
-  const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
-
-  const showToast = useCallback((msg: string) => {
-    setToast(msg);
-    setTimeout(() => setToast(null), 1800);
-  }, []);
 
   const navigateTo = useCallback((newSel: string[], focused?: number) => {
     setSelection(newSel);
@@ -49,37 +32,6 @@ function App() {
     setHistory((h) => [...h.slice(0, histIdx + 1), newSel]);
     setHistIdx((i) => i + 1);
   }, [histIdx]);
-
-  const handleSelect = (colIdx: number, id: string) => {
-    const newSel = [...selection.slice(0, colIdx + 1), id];
-    navigateTo(newSel, colIdx);
-  };
-
-  const handleNavigate = (colIdx: number, item: FileNode) => {
-    if (item.kind === "folder") {
-      const first = item.children?.[0];
-      const newSel = [...selection.slice(0, colIdx + 1), item.id];
-      if (first) newSel.push(first.id);
-      navigateTo(newSel, first ? colIdx + 1 : colIdx);
-    }
-  };
-
-  const handleSidebarNav = (item: SidebarItem) => {
-    if (item.targetPath) {
-      const ids = ["root"];
-      let node = tree;
-      for (let i = 1; i < item.targetPath.length; i++) {
-        const name = item.targetPath[i];
-        const child = (node.children || []).find((c) => c.name === name);
-        if (!child) break;
-        ids.push(child.id);
-        node = child;
-      }
-      const first = node.children?.[0];
-      if (first) ids.push(first.id);
-      navigateTo(ids, ids.length - 2);
-    }
-  };
 
   const goBack = useCallback(() => {
     if (histIdx > 0) {
@@ -94,6 +46,78 @@ function App() {
       setSelection(history[histIdx + 1]);
     }
   }, [histIdx, history]);
+
+  return { selection, focusedCol, setFocusedCol, navigateTo, goBack, goFwd, histIdx, historyLength: history.length };
+}
+
+// ── App ─────────────────────────────────────────────────────────────
+function App() {
+  const { themeKey, setThemeKey } = useTheme("sage");
+  const [densityKey, setDensityKey] = useState<DensityKey>("comfortable");
+  const density = DENSITY[densityKey];
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [showHidden] = useState(false);
+
+  // Navigation: pick real or mock based on runtime
+  const realNav = useRealFileTree(showHidden);
+  const mockNav = useMockNav();
+
+  const isTauriReady = IS_TAURI && realNav.state !== null;
+  const nav = isTauriReady ? realNav : mockNav;
+  const tree: FileNode = isTauriReady ? realNav.state!.rootNode : TREE;
+
+  // Sidebar: real user dirs or mock
+  const realSidebar = useSidebarDirs();
+
+  // Overlay state
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [cheatsheetOpen, setCheatsheetOpen] = useState(false);
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+
+  const showToast = useCallback((msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 1800);
+  }, []);
+
+  const handleSelect = (colIdx: number, id: string) => {
+    const newSel = [...nav.selection.slice(0, colIdx + 1), id];
+    nav.navigateTo(newSel, colIdx);
+  };
+
+  const handleNavigate = (colIdx: number, item: FileNode) => {
+    if (item.kind === "folder") {
+      const first = item.children?.[0];
+      const newSel = [...nav.selection.slice(0, colIdx + 1), item.id];
+      if (first) newSel.push(first.id);
+      nav.navigateTo(newSel, first ? colIdx + 1 : colIdx);
+    }
+  };
+
+  const handleSidebarNav = (item: SidebarItem) => {
+    // Real mode: navigate to disk path
+    if (isTauriReady && item.diskPath) {
+      realNav.navigateToPath(item.diskPath);
+      return;
+    }
+    // Mock mode: navigate by name in mock tree
+    if (item.targetPath) {
+      const ids = ["root"];
+      let node = tree;
+      for (let i = 1; i < item.targetPath.length; i++) {
+        const name = item.targetPath[i];
+        const child = (node.children || []).find((c) => c.name === name);
+        if (!child) break;
+        ids.push(child.id);
+        node = child;
+      }
+      const first = node.children?.[0];
+      if (first) ids.push(first.id);
+      nav.navigateTo(ids, ids.length - 2);
+    }
+  };
 
   const runCommand = (cmd: Command) => {
     if (cmd.id.startsWith("c-theme-")) {
@@ -115,12 +139,12 @@ function App() {
 
   useKeyboardNav({
     tree,
-    selection,
-    focusedCol,
-    setFocusedCol,
-    navigateTo,
-    goBack,
-    goFwd,
+    selection: nav.selection,
+    focusedCol: nav.focusedCol,
+    setFocusedCol: nav.setFocusedCol,
+    navigateTo: nav.navigateTo,
+    goBack: nav.goBack,
+    goFwd: nav.goFwd,
     overlaysOpen,
     onTogglePalette: () => setPaletteOpen((v) => !v),
     onToggleSearch: () => setSearchOpen((v) => !v),
@@ -136,16 +160,25 @@ function App() {
     },
   });
 
-  const pathNames = useMemo(() => buildPathNames(tree, selection), [tree, selection]);
-  const currentNode = useMemo(() => resolveSelection(tree, selection), [tree, selection]);
+  const pathNames = useMemo(() => buildPathNames(tree, nav.selection), [tree, nav.selection]);
+  const currentNode = useMemo(() => resolveSelection(tree, nav.selection), [tree, nav.selection]);
 
   const activeSidebarId = useMemo(() => {
-    if (selection[1]) {
-      const match = SIDEBAR_DATA.flatMap((s) => s.items).find((i) => i.id === selection[1]);
+    if (isTauriReady && realSidebar) {
+      // In real mode, match based on rootPath
+      const rootPath = realNav.state!.rootPath;
+      const match = realSidebar
+        .flatMap((s) => s.items)
+        .find((i) => i.diskPath === rootPath);
+      if (match) return match.id;
+      return "home";
+    }
+    if (nav.selection[1]) {
+      const match = SIDEBAR_DATA.flatMap((s) => s.items).find((i) => i.id === nav.selection[1]);
       if (match) return match.id;
     }
     return "home";
-  }, [selection]);
+  }, [nav.selection, isTauriReady, realSidebar, realNav.state]);
 
   return (
     <div
@@ -181,10 +214,10 @@ function App() {
       >
         <Chrome
           path={pathNames}
-          onBack={goBack}
-          onFwd={goFwd}
-          canBack={histIdx > 0}
-          canFwd={histIdx < history.length - 1}
+          onBack={nav.goBack}
+          onFwd={nav.goFwd}
+          canBack={nav.histIdx > 0}
+          canFwd={nav.histIdx < nav.historyLength - 1}
           onPalette={() => setPaletteOpen(true)}
           onSearch={() => setSearchOpen(!searchOpen)}
           onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
@@ -200,16 +233,17 @@ function App() {
               activeId={activeSidebarId}
               onNavigate={handleSidebarNav}
               density={density}
+              sections={isTauriReady && realSidebar ? realSidebar : undefined}
             />
           )}
           <Columns
             tree={tree}
-            selection={selection}
+            selection={nav.selection}
             onSelect={handleSelect}
             onNavigate={handleNavigate}
             density={density}
-            focusedCol={focusedCol}
-            setFocusedCol={setFocusedCol}
+            focusedCol={nav.focusedCol}
+            setFocusedCol={nav.setFocusedCol}
           />
         </div>
 
