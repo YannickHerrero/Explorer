@@ -13,6 +13,7 @@ interface ColumnsProps {
   focusedCol: number;
   setFocusedCol: (col: number) => void;
   selectedDiskPath?: string;
+  onOpenFile?: () => void;
 }
 
 interface ColumnData {
@@ -37,7 +38,7 @@ export function buildColumnsFromSelection(selection: string[], tree: FileNode): 
   return cols;
 }
 
-export function Columns({ tree, selection, onSelect, onNavigate, density, focusedCol, setFocusedCol, selectedDiskPath }: ColumnsProps) {
+export function Columns({ tree, selection, onSelect, onNavigate, density, focusedCol, setFocusedCol, selectedDiskPath, onOpenFile }: ColumnsProps) {
   const columns = buildColumnsFromSelection(selection, tree);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -77,6 +78,7 @@ export function Columns({ tree, selection, onSelect, onNavigate, density, focuse
         density={density}
         width={Math.max(360, density.colW + 80)}
         diskPath={selectedDiskPath}
+        onOpen={onOpenFile}
       />
     </div>
   );

@@ -275,6 +275,20 @@ function App() {
     }
   };
 
+  const handleOpenFile = useCallback(async () => {
+    if (!isTauriReady) return;
+    const lastId = nav.selection[nav.selection.length - 1];
+    const diskPath = realNav.state?.pathMap.get(lastId);
+    if (diskPath) {
+      try {
+        const { openPath } = await import("@tauri-apps/plugin-opener");
+        await openPath(diskPath);
+      } catch (err) {
+        showToast(`Failed to open: ${err}`);
+      }
+    }
+  }, [isTauriReady, nav.selection, realNav.state]);
+
   const overlaysOpen = paletteOpen || folderPaletteOpen || searchOpen || settingsOpen || cheatsheetOpen;
 
   useKeyboardNav({
@@ -300,6 +314,7 @@ function App() {
       setCheatsheetOpen(false);
       setContextMenu(null);
     },
+    onOpen: handleOpenFile,
   });
 
   const pathNames = useMemo(() => buildPathNames(tree, nav.selection), [tree, nav.selection]);
@@ -409,6 +424,7 @@ function App() {
             focusedCol={nav.focusedCol}
             setFocusedCol={nav.setFocusedCol}
             selectedDiskPath={selectedDiskPath}
+            onOpenFile={handleOpenFile}
           />
         </div>
 

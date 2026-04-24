@@ -18,6 +18,7 @@ interface KeyboardNavOptions {
   onToggleCheatsheet: () => void;
   onToast: (msg: string) => void;
   onDismissOverlays: () => void;
+  onOpen: () => void;
 }
 
 export function useKeyboardNav(opts: KeyboardNavOptions) {
@@ -43,6 +44,7 @@ export function useKeyboardNav(opts: KeyboardNavOptions) {
         onToggleCheatsheet,
         onToast,
         onDismissOverlays,
+        onOpen,
       } = ref.current;
 
       const target = e.target as HTMLElement;
@@ -107,7 +109,10 @@ export function useKeyboardNav(opts: KeyboardNavOptions) {
         }
       } else if (e.key === " ") {
         e.preventDefault();
-        onToast("Quick Look");
+        onOpen();
+      } else if (meta && e.key === "Enter") {
+        e.preventDefault();
+        onOpen();
       } else if (meta && e.key === "Backspace") {
         e.preventDefault();
         onToast("Moved to Trash");

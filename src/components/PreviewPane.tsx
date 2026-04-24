@@ -20,9 +20,10 @@ interface PreviewPaneProps {
   density: DensityTokens;
   width: number;
   diskPath?: string;
+  onOpen?: () => void;
 }
 
-export function PreviewPane({ node, width, diskPath }: PreviewPaneProps) {
+export function PreviewPane({ node, width, diskPath, onOpen }: PreviewPaneProps) {
   if (node.kind === "folder") {
     return (
       <div
@@ -52,7 +53,7 @@ export function PreviewPane({ node, width, diskPath }: PreviewPaneProps) {
         gap: 18,
       }}
     >
-      <FilePreview node={node} diskPath={diskPath} />
+      <FilePreview node={node} diskPath={diskPath} onOpen={onOpen} />
     </div>
   );
 }
@@ -116,7 +117,7 @@ function FolderPreview({ node }: { node: FileNode }) {
   );
 }
 
-function FilePreview({ node, diskPath }: { node: FileNode; diskPath?: string }) {
+function FilePreview({ node, diskPath, onOpen }: { node: FileNode; diskPath?: string; onOpen?: () => void }) {
   const isImage = node.kind === "image";
   const assetUrl = useAssetUrl(isImage ? diskPath : undefined);
 
@@ -191,8 +192,8 @@ function FilePreview({ node, diskPath }: { node: FileNode; diskPath?: string }) 
       <MetaList items={buildMeta(node)} />
 
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-        <PreviewBtn icon="eye" label="Quick Look" kbd={["Space"]} />
-        <PreviewBtn icon="folder-open" label="Open" kbd={["Ctrl", "Enter"]} />
+        <PreviewBtn icon="eye" label="Quick Look" kbd={["Space"]} onClick={onOpen} />
+        <PreviewBtn icon="folder-open" label="Open" kbd={["Ctrl", "Enter"]} onClick={onOpen} />
       </div>
     </>
   );
@@ -261,9 +262,10 @@ function MetaList({ items }: { items: [string, string][] }) {
   );
 }
 
-function PreviewBtn({ icon, label, kbd }: { icon: string; label: string; kbd?: string[] }) {
+function PreviewBtn({ icon, label, kbd, onClick }: { icon: string; label: string; kbd?: string[]; onClick?: () => void }) {
   return (
     <button
+      onClick={onClick}
       style={{
         display: "inline-flex",
         alignItems: "center",
