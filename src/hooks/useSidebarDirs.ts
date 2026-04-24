@@ -12,6 +12,17 @@ interface UserDirs {
   videos: string | null;
 }
 
+interface WslDistro {
+  name: string;
+  path: string;
+}
+
+interface DriveInfo {
+  letter: string;
+  path: string;
+  label: string | null;
+}
+
 function pathBasename(p: string): string {
   return p.split(/[/\\]/).filter(Boolean).pop() || p;
 }
@@ -23,9 +34,16 @@ export function useSidebarDirs(): SidebarSection[] | null {
     let cancelled = false;
     (async () => {
       try {
-        const dirs = await invoke<UserDirs>("get_user_dirs");
+        // Fetch all data in parallel
+        const [dirs, wslDistros, drives] = await Promise.all([
+          invoke<UserDirs>("get_user_dirs"),
+          invoke<WslDistro[]>("get_wsl_distros").catch(() => [] as WslDistro[]),
+          invoke<DriveInfo[]>("get_drives").catch(() => [] as DriveInfo[]),
+        ]);
+
         if (cancelled) return;
 
+        // Favorites
         const favorites: SidebarSection = {
           label: "Favorites",
           items: [
@@ -51,7 +69,36 @@ export function useSidebarDirs(): SidebarSection[] | null {
           favorites.items.push({ id: "videos", name: "Videos", icon: "folder", diskPath: dirs.videos });
         }
 
-        const tags: SidebarSection = {
+        const result: SidebarSection[] = [favorites];
+
+        // WSL distros
+        if (wslDistros.length > 0) {
+          result.push({
+            label: "WSL",
+            items: wslDistros.map((d) => ({
+              id: `wsl-${d.name}`,
+              name: d.name,
+              icon: "terminal",
+              diskPath: d.path,
+            })),
+          });
+        }
+
+        // Drives
+        if (drives.length > 0) {
+          result.push({
+            label: "Drives",
+            items: drives.map((d) => ({
+              id: `drive-${d.letter}`,
+              name: d.label || `${d.letter}`,
+              icon: "drive",
+              diskPath: d.path,
+            })),
+          });
+        }
+
+        // Tags
+        result.push({
           label: "Tags",
           items: [
             { id: "t-red", name: "Urgent", icon: "tag", color: "#C44536" },
@@ -59,18 +106,19 @@ export function useSidebarDirs(): SidebarSection[] | null {
             { id: "t-grn", name: "Done", icon: "tag", color: "#3F6B3A" },
             { id: "t-blu", name: "Reference", icon: "tag", color: "#4A6B8A" },
           ],
-        };
+        });
 
-        const trash: SidebarSection = {
+        // Trash
+        result.push({
           label: "",
           items: [
             { id: "trash", name: "Trash", icon: "trash" },
           ],
-        };
+        });
 
-        setSections([favorites, tags, trash]);
+        setSections(result);
       } catch (e) {
-        console.error("Failed to load user directories:", e);
+        console.error("Failed to load sidebar data:", e);
       }
     })();
     return () => { cancelled = true; };
