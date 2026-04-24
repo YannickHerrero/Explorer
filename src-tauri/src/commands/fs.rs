@@ -1,6 +1,7 @@
 use serde::Serialize;
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::process::Command;
 use std::time::SystemTime;
 
 #[derive(Debug, Serialize)]
@@ -40,16 +41,54 @@ pub struct WslDistro {
 pub fn get_wsl_distros() -> Vec<WslDistro> {
     let mut distros = Vec::new();
 
-    // WSL filesystems are at \\wsl.localhost\ or \\wsl$\
+    // Method 1: try listing \\wsl.localhost\ and \\wsl$\ via filesystem
     for base in &["\\\\wsl.localhost", "\\\\wsl$"] {
         let base_path = PathBuf::from(base);
         if let Ok(entries) = fs::read_dir(&base_path) {
             for entry in entries.flatten() {
                 let name = entry.file_name().to_string_lossy().to_string();
                 let path = entry.path().to_string_lossy().to_string();
-                // Avoid duplicates
                 if !distros.iter().any(|d: &WslDistro| d.name == name) {
                     distros.push(WslDistro { name, path });
+                }
+            }
+        }
+    }
+
+    // Method 2: fallback to `wsl --list --quiet` if filesystem method found nothing
+    if distros.is_empty() {
+        if let Ok(output) = Command::new("wsl")
+            .args(["--list", "--quiet"])
+            .output()
+        {
+            if output.status.success() {
+                // wsl output is UTF-16LE on Windows
+                let text = String::from_utf16_lossy(
+                    &output
+                        .stdout
+                        .chunks_exact(2)
+                        .map(|c| u16::from_le_bytes([c[0], c[1]]))
+                        .collect::<Vec<u16>>(),
+                );
+                for line in text.lines() {
+                    let name = line.trim().to_string();
+                    if name.is_empty() {
+                        continue;
+                    }
+                    // Try both UNC path formats
+                    let path = format!("\\\\wsl.localhost\\{}", name);
+                    let alt_path = format!("\\\\wsl$\\{}", name);
+                    let final_path = if PathBuf::from(&path).exists() {
+                        path
+                    } else {
+                        alt_path
+                    };
+                    if !distros.iter().any(|d: &WslDistro| d.name == name) {
+                        distros.push(WslDistro {
+                            name,
+                            path: final_path,
+                        });
+                    }
                 }
             }
         }
