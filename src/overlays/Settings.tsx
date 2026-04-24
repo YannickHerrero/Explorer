@@ -3,6 +3,12 @@ import { Icon } from "@/icons/Icon";
 import { THEMES } from "@/themes";
 import type { ThemeKey, DensityKey, ThemeColors } from "@/types";
 
+interface TagDef {
+  id: string;
+  name: string;
+  color: string;
+}
+
 interface SettingsProps {
   open: boolean;
   onClose: () => void;
@@ -14,6 +20,10 @@ interface SettingsProps {
   setSidebarOpen: (v: boolean) => void;
   hideTitlebar: boolean;
   setHideTitlebar: (v: boolean) => void;
+  tags?: TagDef[];
+  onAddTag?: (tag: TagDef) => void;
+  onRemoveTag?: (tagId: string) => void;
+  onUpdateTag?: (tagId: string, updates: Partial<TagDef>) => void;
 }
 
 export function Settings({
@@ -27,7 +37,12 @@ export function Settings({
   setSidebarOpen,
   hideTitlebar,
   setHideTitlebar,
+  tags,
+  onAddTag,
+  onRemoveTag,
+  onUpdateTag,
 }: SettingsProps) {
+  const [activeTab, setActiveTab] = useState("General");
   if (!open) return null;
 
   return (
@@ -81,35 +96,34 @@ export function Settings({
           </div>
           {(
             [
-              ["General", "settings", true],
-              ["Appearance", "swatch", false],
-              ["Sidebar", "sidebar", false],
-              ["Keyboard", "keyboard", false],
-              ["Tags", "tag", false],
-              ["Sync", "cloud", false],
-              ["About", "info", false],
-            ] as [string, string, boolean][]
-          ).map(([label, icon, active], i) => (
-            <div
-              key={i}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                padding: "6px 10px",
-                borderRadius: 5,
-                background: active ? "var(--accent)" : "transparent",
-                color: active ? "var(--paper)" : "var(--ink-soft)",
-                fontFamily: "var(--font-sans)",
-                fontSize: 12.5,
-                cursor: "pointer",
-                marginBottom: 1,
-              }}
-            >
-              <Icon name={icon} size={13} />
-              <span>{label}</span>
-            </div>
-          ))}
+              ["General", "settings"],
+              ["Tags", "tag"],
+            ] as [string, string][]
+          ).map(([label, icon]) => {
+            const active = activeTab === label;
+            return (
+              <div
+                key={label}
+                onClick={() => setActiveTab(label)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  padding: "6px 10px",
+                  borderRadius: 5,
+                  background: active ? "var(--accent)" : "transparent",
+                  color: active ? "var(--paper)" : "var(--ink-soft)",
+                  fontFamily: "var(--font-sans)",
+                  fontSize: 12.5,
+                  cursor: "pointer",
+                  marginBottom: 1,
+                }}
+              >
+                <Icon name={icon} size={13} />
+                <span>{label}</span>
+              </div>
+            );
+          })}
         </div>
 
         {/* Settings content */}
@@ -125,10 +139,10 @@ export function Settings({
                   letterSpacing: -0.3,
                 }}
               >
-                General
+                {activeTab}
               </div>
               <div style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--muted)", marginTop: 2 }}>
-                Appearance, density, and keyboard behaviour
+                {activeTab === "General" ? "Appearance, density, and keyboard behaviour" : "Manage file tags and colors"}
               </div>
             </div>
             <button
@@ -150,46 +164,47 @@ export function Settings({
             </button>
           </div>
 
-          {/* Theme picker */}
-          <Section title="Theme" subtitle="Five quiet palettes for day and night work.">
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 10 }}>
-              {(Object.entries(THEMES) as [ThemeKey, ThemeColors][]).map(([key, t]) => (
-                <ThemeCard key={key} theme={t} active={theme === key} onClick={() => setTheme(key)} />
-              ))}
-            </div>
-          </Section>
+          {activeTab === "General" ? (
+            <>
+              <Section title="Theme" subtitle="Five quiet palettes for day and night work.">
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 10 }}>
+                  {(Object.entries(THEMES) as [ThemeKey, ThemeColors][]).map(([key, t]) => (
+                    <ThemeCard key={key} theme={t} active={theme === key} onClick={() => setTheme(key)} />
+                  ))}
+                </div>
+              </Section>
 
-          {/* Density */}
-          <Section title="Density" subtitle="How much breathing room each row gets.">
-            <SegmentedRow
-              value={density}
-              onChange={(v) => setDensity(v as DensityKey)}
-              options={[
-                { v: "compact", l: "Compact" },
-                { v: "comfortable", l: "Comfortable" },
-                { v: "spacious", l: "Spacious" },
-              ]}
-            />
-          </Section>
+              <Section title="Density" subtitle="How much breathing room each row gets.">
+                <SegmentedRow
+                  value={density}
+                  onChange={(v) => setDensity(v as DensityKey)}
+                  options={[
+                    { v: "compact", l: "Compact" },
+                    { v: "comfortable", l: "Comfortable" },
+                    { v: "spacious", l: "Spacious" },
+                  ]}
+                />
+              </Section>
 
-          {/* Sidebar toggle */}
-          <Section title="Sidebar" subtitle="Devices, favorites, cloud drives, and trash.">
-            <Toggle value={sidebarOpen} onChange={setSidebarOpen} label={sidebarOpen ? "Visible" : "Hidden"} />
-          </Section>
+              <Section title="Sidebar" subtitle="Devices, favorites, cloud drives, and trash.">
+                <Toggle value={sidebarOpen} onChange={setSidebarOpen} label={sidebarOpen ? "Visible" : "Hidden"} />
+              </Section>
 
-          {/* Window */}
-          <Section title="Window" subtitle="Control the native window appearance.">
-            <Toggle value={hideTitlebar} onChange={setHideTitlebar} label="Hide native title bar" />
-          </Section>
+              <Section title="Window" subtitle="Control the native window appearance.">
+                <Toggle value={hideTitlebar} onChange={setHideTitlebar} label="Hide native title bar" />
+              </Section>
 
-          {/* Keyboard */}
-          <Section title="Keyboard" subtitle="Explorer is keyboard-first. Press Ctrl+/ anywhere for the full map.">
-            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-              <SettingsRow label="Show shortcut hints on hover" value={true} />
-              <SettingsRow label="Use Vim-style navigation (hjkl)" value={false} />
-              <SettingsRow label="Quick-find on any keystroke" value={true} />
-            </div>
-          </Section>
+              <Section title="Keyboard" subtitle="Explorer is keyboard-first. Press Ctrl+/ anywhere for the full map.">
+                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                  <SettingsRow label="Show shortcut hints on hover" value={true} />
+                  <SettingsRow label="Use Vim-style navigation (hjkl)" value={false} />
+                  <SettingsRow label="Quick-find on any keystroke" value={true} />
+                </div>
+              </Section>
+            </>
+          ) : activeTab === "Tags" ? (
+            <TagsTab tags={tags || []} onAddTag={onAddTag} onRemoveTag={onRemoveTag} onUpdateTag={onUpdateTag} />
+          ) : null}
         </div>
       </div>
     </div>
@@ -333,6 +348,196 @@ function SettingsRow({ label, value }: { label: string; value: boolean }) {
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid var(--line)" }}>
       <span style={{ fontFamily: "var(--font-sans)", fontSize: 12.5, color: "var(--ink-soft)" }}>{label}</span>
       <Toggle value={v} onChange={setV} label="" />
+    </div>
+  );
+}
+
+const TAG_COLORS = [
+  "#C44536", "#D97706", "#3F6B3A", "#4A6B8A",
+  "#7C3AED", "#DB2777", "#059669", "#6366F1",
+  "#B45309", "#64748B",
+];
+
+function TagsTab({
+  tags,
+  onAddTag,
+  onRemoveTag,
+  onUpdateTag,
+}: {
+  tags: TagDef[];
+  onAddTag?: (tag: TagDef) => void;
+  onRemoveTag?: (tagId: string) => void;
+  onUpdateTag?: (tagId: string, updates: Partial<TagDef>) => void;
+}) {
+  const [newName, setNewName] = useState("");
+  const [newColor, setNewColor] = useState(TAG_COLORS[0]);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+
+  const handleAdd = () => {
+    const name = newName.trim();
+    if (!name || !onAddTag) return;
+    const id = `t-${Date.now()}`;
+    onAddTag({ id, name, color: newColor });
+    setNewName("");
+  };
+
+  return (
+    <div>
+      <Section title="Your Tags" subtitle="Tags help you organize and find files quickly.">
+        <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          {tags.map((tag) => (
+            <div
+              key={tag.id}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                padding: "8px 0",
+                borderBottom: "1px solid var(--line)",
+              }}
+            >
+              <span
+                style={{
+                  width: 12,
+                  height: 12,
+                  borderRadius: "50%",
+                  background: tag.color,
+                  flexShrink: 0,
+                  cursor: "pointer",
+                }}
+                onClick={() => {
+                  if (!onUpdateTag) return;
+                  const idx = TAG_COLORS.indexOf(tag.color);
+                  const next = TAG_COLORS[(idx + 1) % TAG_COLORS.length];
+                  onUpdateTag(tag.id, { color: next });
+                }}
+              />
+              {editingId === tag.id ? (
+                <input
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  onBlur={() => {
+                    if (editName.trim() && onUpdateTag) {
+                      onUpdateTag(tag.id, { name: editName.trim() });
+                    }
+                    setEditingId(null);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      if (editName.trim() && onUpdateTag) {
+                        onUpdateTag(tag.id, { name: editName.trim() });
+                      }
+                      setEditingId(null);
+                    }
+                    if (e.key === "Escape") setEditingId(null);
+                  }}
+                  autoFocus
+                  style={{
+                    flex: 1,
+                    border: "1px solid var(--accent)",
+                    borderRadius: 4,
+                    padding: "2px 6px",
+                    fontFamily: "var(--font-sans)",
+                    fontSize: 12.5,
+                    color: "var(--ink)",
+                    background: "var(--paper)",
+                    outline: "none",
+                  }}
+                />
+              ) : (
+                <span
+                  style={{
+                    flex: 1,
+                    fontFamily: "var(--font-sans)",
+                    fontSize: 12.5,
+                    color: "var(--ink-soft)",
+                    cursor: "pointer",
+                  }}
+                  onClick={() => {
+                    setEditingId(tag.id);
+                    setEditName(tag.name);
+                  }}
+                >
+                  {tag.name}
+                </span>
+              )}
+              <button
+                onClick={() => onRemoveTag?.(tag.id)}
+                style={{
+                  border: "none",
+                  background: "transparent",
+                  color: "var(--muted)",
+                  cursor: "pointer",
+                  padding: 4,
+                  display: "inline-flex",
+                  alignItems: "center",
+                }}
+              >
+                <Icon name="x" size={11} />
+              </button>
+            </div>
+          ))}
+        </div>
+      </Section>
+
+      <Section title="Add New Tag">
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <div style={{ display: "flex", gap: 4 }}>
+            {TAG_COLORS.map((c) => (
+              <button
+                key={c}
+                onClick={() => setNewColor(c)}
+                style={{
+                  width: 18,
+                  height: 18,
+                  borderRadius: "50%",
+                  background: c,
+                  border: newColor === c ? "2px solid var(--ink)" : "2px solid transparent",
+                  cursor: "pointer",
+                  padding: 0,
+                }}
+              />
+            ))}
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+          <input
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") handleAdd(); }}
+            placeholder="Tag name..."
+            style={{
+              flex: 1,
+              border: "1px solid var(--line)",
+              borderRadius: 5,
+              padding: "6px 10px",
+              fontFamily: "var(--font-sans)",
+              fontSize: 12.5,
+              color: "var(--ink)",
+              background: "var(--paper)",
+              outline: "none",
+            }}
+          />
+          <button
+            onClick={handleAdd}
+            disabled={!newName.trim()}
+            style={{
+              padding: "6px 14px",
+              border: "none",
+              borderRadius: 5,
+              background: newName.trim() ? "var(--accent)" : "var(--paper-deep)",
+              color: newName.trim() ? "var(--paper)" : "var(--muted)",
+              fontFamily: "var(--font-sans)",
+              fontSize: 12,
+              fontWeight: 500,
+              cursor: newName.trim() ? "pointer" : "default",
+            }}
+          >
+            Add
+          </button>
+        </div>
+      </Section>
     </div>
   );
 }

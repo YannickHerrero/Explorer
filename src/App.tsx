@@ -562,6 +562,10 @@ function App() {
           setSidebarOpen={handleSetSidebarOpen}
           hideTitlebar={hideTitlebar}
           setHideTitlebar={handleSetHideTitlebar}
+          tags={config.tags}
+          onAddTag={addTag}
+          onRemoveTag={removeTag}
+          onUpdateTag={updateTag}
         />
         <Cheatsheet open={cheatsheetOpen} onClose={() => setCheatsheetOpen(false)} />
 
