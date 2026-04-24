@@ -166,6 +166,7 @@ function FileRow({
       onClick={onClick}
       onDoubleClick={onDoubleClick}
       className="file-row"
+      data-node-id={item.id}
       style={{
         display: "flex",
         alignItems: "center",

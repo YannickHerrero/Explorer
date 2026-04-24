@@ -12,6 +12,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { useKeyboardNav } from "@/hooks/useKeyboardNav";
 import { useRealFileTree } from "@/hooks/useRealFileTree";
 import { useSidebarDirs } from "@/hooks/useSidebarDirs";
+import { useConfig } from "@/hooks/useConfig";
 import { DENSITY } from "@/themes/tokens";
 import { TREE, resolveSelection, buildPathNames } from "@/data";
 import { THEMES } from "@/themes";
@@ -58,6 +59,9 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [showHidden] = useState(false);
 
+  // Config (persisted preferences + pinned folders)
+  const { config, pinFolder, unpinFolder, isPinned } = useConfig();
+
   // Navigation: pick real or mock based on runtime
   const realNav = useRealFileTree(showHidden);
   const mockNav = useMockNav();
@@ -66,15 +70,15 @@ function App() {
   const nav = isTauriReady ? realNav : mockNav;
   const tree: FileNode = isTauriReady ? realNav.state!.rootNode : TREE;
 
-  // Sidebar: real user dirs or mock
-  const realSidebar = useSidebarDirs();
+  // Sidebar: real user dirs (with pinned folders) or mock
+  const realSidebar = useSidebarDirs(config.pinned_folders);
 
   // Overlay state
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [cheatsheetOpen, setCheatsheetOpen] = useState(false);
-  const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; nodeId: string } | null>(null);
   const [toast, setToast] = useState<string | null>(null);
 
   const showToast = useCallback((msg: string) => {
@@ -97,12 +101,10 @@ function App() {
   };
 
   const handleSidebarNav = (item: SidebarItem) => {
-    // Real mode: navigate to disk path
     if (isTauriReady && item.diskPath) {
       realNav.navigateToPath(item.diskPath);
       return;
     }
-    // Mock mode: navigate by name in mock tree
     if (item.targetPath) {
       const ids = ["root"];
       let node = tree;
@@ -165,7 +167,6 @@ function App() {
 
   const activeSidebarId = useMemo(() => {
     if (isTauriReady && realSidebar) {
-      // In real mode, match based on rootPath
       const rootPath = realNav.state!.rootPath;
       const match = realSidebar
         .flatMap((s) => s.items)
@@ -180,6 +181,17 @@ function App() {
     return "home";
   }, [nav.selection, isTauriReady, realSidebar, realNav.state]);
 
+  // Context menu: resolve the right-clicked node and its disk path
+  const contextNode = useMemo(() => {
+    if (!contextMenu) return null;
+    return resolveSelection(tree, [...nav.selection.slice(0, -1), contextMenu.nodeId]) || null;
+  }, [contextMenu, tree, nav.selection]);
+
+  const contextDiskPath = useMemo(() => {
+    if (!contextMenu || !isTauriReady) return null;
+    return realNav.state?.pathMap.get(contextMenu.nodeId) ?? null;
+  }, [contextMenu, isTauriReady, realNav.state]);
+
   return (
     <div
       style={{
@@ -193,9 +205,16 @@ function App() {
         fontFamily: "var(--font-sans)",
       }}
       onContextMenu={(e) => {
-        if ((e.target as HTMLElement).closest(".file-row")) {
+        const row = (e.target as HTMLElement).closest(".file-row");
+        if (row) {
           e.preventDefault();
-          setContextMenu({ x: e.clientX, y: e.clientY });
+          // Find which node was right-clicked by walking up to find the selection
+          const nodeId = row.getAttribute("data-node-id");
+          if (nodeId) {
+            setContextMenu({ x: e.clientX, y: e.clientY, nodeId });
+          } else {
+            setContextMenu({ x: e.clientX, y: e.clientY, nodeId: "" });
+          }
         }
       }}
     >
@@ -270,6 +289,21 @@ function App() {
             y={contextMenu.y}
             onClose={() => setContextMenu(null)}
             onRun={(item) => showToast(item.name)}
+            isFolder={contextNode?.kind === "folder"}
+            isPinned={contextDiskPath ? isPinned(contextDiskPath) : false}
+            onTogglePin={
+              contextDiskPath && contextNode?.kind === "folder"
+                ? () => {
+                    if (isPinned(contextDiskPath)) {
+                      unpinFolder(contextDiskPath);
+                      showToast(`Removed "${contextNode.name}" from Favorites`);
+                    } else {
+                      pinFolder(contextNode.name, contextDiskPath);
+                      showToast(`Added "${contextNode.name}" to Favorites`);
+                    }
+                  }
+                : undefined
+            }
           />
         )}
 
