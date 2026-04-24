@@ -19,6 +19,9 @@ interface KeyboardNavOptions {
   onToast: (msg: string) => void;
   onDismissOverlays: () => void;
   onOpen: () => void;
+  onCopy: () => void;
+  onCut: () => void;
+  onPaste: () => void;
 }
 
 export function useKeyboardNav(opts: KeyboardNavOptions) {
@@ -45,6 +48,9 @@ export function useKeyboardNav(opts: KeyboardNavOptions) {
         onToast,
         onDismissOverlays,
         onOpen,
+        onCopy,
+        onCut,
+        onPaste,
       } = ref.current;
 
       const target = e.target as HTMLElement;
@@ -70,6 +76,9 @@ export function useKeyboardNav(opts: KeyboardNavOptions) {
 
       if (meta && e.key === "[") { e.preventDefault(); goBack(); return; }
       if (meta && e.key === "]") { e.preventDefault(); goFwd(); return; }
+      if (meta && e.key.toLowerCase() === "c") { e.preventDefault(); onCopy(); return; }
+      if (meta && e.key.toLowerCase() === "x") { e.preventDefault(); onCut(); return; }
+      if (meta && e.key.toLowerCase() === "v") { e.preventDefault(); onPaste(); return; }
 
       const columns = buildColumnsFromSelection(selection, tree);
       const currentItems = columns[focusedCol]?.items || [];
@@ -113,6 +122,15 @@ export function useKeyboardNav(opts: KeyboardNavOptions) {
       } else if (meta && e.key === "Enter") {
         e.preventDefault();
         onOpen();
+      } else if (e.key === "y") {
+        e.preventDefault();
+        onCopy();
+      } else if (e.key === "x") {
+        e.preventDefault();
+        onCut();
+      } else if (e.key === "p") {
+        e.preventDefault();
+        onPaste();
       } else if (meta && e.key === "Backspace") {
         e.preventDefault();
         onToast("Moved to Trash");

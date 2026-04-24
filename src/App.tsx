@@ -218,6 +218,7 @@ function App() {
   const [cheatsheetOpen, setCheatsheetOpen] = useState(false);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; nodeId: string; isSidebar?: boolean } | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [clipboard, setClipboard] = useState<{ path: string; name: string; mode: "copy" | "cut" } | null>(null);
 
   const showToast = useCallback((msg: string) => {
     setToast(msg);
@@ -270,6 +271,14 @@ function App() {
       setCheatsheetOpen(true);
     } else if (cmd.id === "c-toggle-sidebar") {
       handleSetSidebarOpen(!sidebarOpen);
+    } else if (cmd.id === "c-copy") {
+      handleCopy();
+    } else if (cmd.id === "c-cut") {
+      handleCut();
+    } else if (cmd.id === "c-paste") {
+      handlePaste();
+    } else if (cmd.id === "c-quick-look" || cmd.id === "c-open") {
+      handleOpenFile();
     } else {
       showToast(cmd.name);
     }
@@ -288,6 +297,57 @@ function App() {
       }
     }
   }, [isTauriReady, nav.selection, realNav.state]);
+
+  const handleCopy = useCallback(() => {
+    if (!isTauriReady) return;
+    const lastId = nav.selection[nav.selection.length - 1];
+    const diskPath = realNav.state?.pathMap.get(lastId);
+    const node = resolveSelection(tree, nav.selection);
+    if (diskPath && node) {
+      setClipboard({ path: diskPath, name: node.name, mode: "copy" });
+      showToast(`Copied "${node.name}"`);
+    }
+  }, [isTauriReady, nav.selection, realNav.state, tree]);
+
+  const handleCut = useCallback(() => {
+    if (!isTauriReady) return;
+    const lastId = nav.selection[nav.selection.length - 1];
+    const diskPath = realNav.state?.pathMap.get(lastId);
+    const node = resolveSelection(tree, nav.selection);
+    if (diskPath && node) {
+      setClipboard({ path: diskPath, name: node.name, mode: "cut" });
+      showToast(`Cut "${node.name}"`);
+    }
+  }, [isTauriReady, nav.selection, realNav.state, tree]);
+
+  const handlePaste = useCallback(async () => {
+    if (!isTauriReady || !clipboard) return;
+    // Paste into the current directory (parent of the last selected item, or the selected folder)
+    const currentNode = resolveSelection(tree, nav.selection);
+    let destDir: string | undefined;
+    if (currentNode?.kind === "folder") {
+      destDir = realNav.state?.pathMap.get(nav.selection[nav.selection.length - 1]);
+    } else {
+      // Use the parent directory
+      const parentId = nav.selection[nav.selection.length - 2];
+      destDir = parentId ? realNav.state?.pathMap.get(parentId) : realNav.state?.rootPath;
+    }
+    if (!destDir) return;
+    try {
+      const { invoke } = await import("@tauri-apps/api/core");
+      if (clipboard.mode === "copy") {
+        await invoke("copy_path", { source: clipboard.path, destDir });
+      } else {
+        await invoke("move_path", { source: clipboard.path, destDir });
+        setClipboard(null);
+      }
+      showToast(`Pasted "${clipboard.name}"`);
+      // Refresh the current directory
+      if (realNav.refreshCurrentDir) realNav.refreshCurrentDir();
+    } catch (err) {
+      showToast(`Paste failed: ${err}`);
+    }
+  }, [isTauriReady, clipboard, tree, nav.selection, realNav.state]);
 
   const overlaysOpen = paletteOpen || folderPaletteOpen || searchOpen || settingsOpen || cheatsheetOpen;
 
@@ -315,6 +375,9 @@ function App() {
       setContextMenu(null);
     },
     onOpen: handleOpenFile,
+    onCopy: handleCopy,
+    onCut: handleCut,
+    onPaste: handlePaste,
   });
 
   const pathNames = useMemo(() => buildPathNames(tree, nav.selection), [tree, nav.selection]);

@@ -334,3 +334,61 @@ pub fn get_file_meta(path: String) -> Result<FileEntry, String> {
         children: None,
     })
 }
+
+fn copy_dir_recursive(src: &Path, dst: &Path) -> Result<(), String> {
+    fs::create_dir_all(dst).map_err(|e| format!("Failed to create directory: {}", e))?;
+    for entry in fs::read_dir(src).map_err(|e| format!("Failed to read directory: {}", e))? {
+        let entry = entry.map_err(|e| format!("Failed to read entry: {}", e))?;
+        let src_path = entry.path();
+        let dst_path = dst.join(entry.file_name());
+        if src_path.is_dir() {
+            copy_dir_recursive(&src_path, &dst_path)?;
+        } else {
+            fs::copy(&src_path, &dst_path)
+                .map_err(|e| format!("Failed to copy file: {}", e))?;
+        }
+    }
+    Ok(())
+}
+
+#[tauri::command]
+pub fn copy_path(source: String, dest_dir: String) -> Result<String, String> {
+    let src = PathBuf::from(&source);
+    let name = src.file_name().ok_or("Invalid source path")?.to_owned();
+    let dest = PathBuf::from(&dest_dir).join(&name);
+
+    // If destination exists, add a suffix
+    let dest = if dest.exists() {
+        let stem = dest.file_stem().and_then(|s| s.to_str()).unwrap_or("file");
+        let ext = dest.extension().and_then(|e| e.to_str());
+        let mut i = 1;
+        loop {
+            let new_name = if let Some(ext) = ext {
+                format!("{} ({}). {}", stem, i, ext)
+            } else {
+                format!("{} ({})", stem, i)
+            };
+            let candidate = PathBuf::from(&dest_dir).join(&new_name);
+            if !candidate.exists() { break candidate; }
+            i += 1;
+        }
+    } else {
+        dest
+    };
+
+    if src.is_dir() {
+        copy_dir_recursive(&src, &dest)?;
+    } else {
+        fs::copy(&src, &dest).map_err(|e| format!("Copy failed: {}", e))?;
+    }
+    Ok(dest.to_string_lossy().to_string())
+}
+
+#[tauri::command]
+pub fn move_path(source: String, dest_dir: String) -> Result<String, String> {
+    let src = PathBuf::from(&source);
+    let name = src.file_name().ok_or("Invalid source path")?.to_owned();
+    let dest = PathBuf::from(&dest_dir).join(&name);
+    fs::rename(&src, &dest).map_err(|e| format!("Move failed: {}", e))?;
+    Ok(dest.to_string_lossy().to_string())
+}

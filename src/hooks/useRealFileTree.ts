@@ -206,6 +206,43 @@ export function useRealFileTree(showHidden: boolean) {
     [showHidden, histIdx],
   );
 
+  // Re-read the current root directory and rebuild state
+  const refreshCurrentDir = useCallback(async () => {
+    if (!state) return;
+    try {
+      const entries = await invoke<RawFileEntry[]>("read_dir", {
+        path: state.rootPath,
+        showHidden,
+      });
+      const children = entries.map(rawToFileNode);
+
+      setState((prev) => {
+        if (!prev) return prev;
+        const newPathMap = new Map<string, string>();
+        newPathMap.set("root", prev.rootPath);
+        for (const entry of entries) {
+          newPathMap.set(rawToFileNode(entry).id, entry.path);
+        }
+        // Preserve pathMap entries for subdirectories that are still loaded
+        for (const [k, v] of prev.pathMap) {
+          if (!newPathMap.has(k)) newPathMap.set(k, v);
+        }
+
+        const newLoadedDirs = new Map<string, FileNode[]>();
+        newLoadedDirs.set("root", children);
+
+        return {
+          ...prev,
+          rootNode: { ...prev.rootNode, children },
+          pathMap: newPathMap,
+          loadedDirs: newLoadedDirs,
+        };
+      });
+    } catch (e) {
+      console.error("Failed to refresh directory:", e);
+    }
+  }, [state, showHidden]);
+
   return {
     state,
     selection,
@@ -218,6 +255,7 @@ export function useRealFileTree(showHidden: boolean) {
     histIdx,
     historyLength: history.length,
     loadDir,
+    refreshCurrentDir,
   };
 }
 
