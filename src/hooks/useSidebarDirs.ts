@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import type { SidebarSection } from "@/types";
+import type { PinnedFolder } from "@/hooks/useConfig";
 
 interface UserDirs {
   home: string;
@@ -27,7 +28,7 @@ function pathBasename(p: string): string {
   return p.split(/[/\\]/).filter(Boolean).pop() || p;
 }
 
-export function useSidebarDirs(): SidebarSection[] | null {
+export function useSidebarDirs(pinnedFolders: PinnedFolder[]): SidebarSection[] | null {
   const [sections, setSections] = useState<SidebarSection[] | null>(null);
 
   useEffect(() => {
@@ -67,6 +68,19 @@ export function useSidebarDirs(): SidebarSection[] | null {
         }
         if (dirs.videos) {
           favorites.items.push({ id: "videos", name: "Videos", icon: "folder", diskPath: dirs.videos });
+        }
+
+        // Add user-pinned folders
+        const systemPaths = new Set(favorites.items.map((i) => i.diskPath));
+        for (const pin of pinnedFolders) {
+          if (!systemPaths.has(pin.path)) {
+            favorites.items.push({
+              id: `pin-${pin.path}`,
+              name: pin.name,
+              icon: "star",
+              diskPath: pin.path,
+            });
+          }
         }
 
         const result: SidebarSection[] = [favorites];
@@ -122,7 +136,7 @@ export function useSidebarDirs(): SidebarSection[] | null {
       }
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [pinnedFolders]);
 
   return sections;
 }
