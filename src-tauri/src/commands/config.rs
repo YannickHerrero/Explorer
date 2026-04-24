@@ -10,6 +10,19 @@ pub struct PinnedFolder {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct TagDef {
+    pub id: String,
+    pub name: String,
+    pub color: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct FileTag {
+    pub file_path: String,
+    pub tag_id: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AppConfig {
     pub theme: String,
     pub density: String,
@@ -21,6 +34,19 @@ pub struct AppConfig {
     pub last_path: Option<String>,
     #[serde(default)]
     pub pinned_folders: Vec<PinnedFolder>,
+    #[serde(default = "default_tags")]
+    pub tags: Vec<TagDef>,
+    #[serde(default)]
+    pub file_tags: Vec<FileTag>,
+}
+
+fn default_tags() -> Vec<TagDef> {
+    vec![
+        TagDef { id: "t-red".into(), name: "Urgent".into(), color: "#C44536".into() },
+        TagDef { id: "t-org".into(), name: "Review".into(), color: "#D97706".into() },
+        TagDef { id: "t-grn".into(), name: "Done".into(), color: "#3F6B3A".into() },
+        TagDef { id: "t-blu".into(), name: "Reference".into(), color: "#4A6B8A".into() },
+    ]
 }
 
 impl Default for AppConfig {
@@ -34,6 +60,8 @@ impl Default for AppConfig {
             hide_titlebar: true,
             last_path: None,
             pinned_folders: Vec::new(),
+            tags: default_tags(),
+            file_tags: Vec::new(),
         }
     }
 }

@@ -21,9 +21,10 @@ interface PreviewPaneProps {
   width: number;
   diskPath?: string;
   onOpen?: () => void;
+  fileTags?: { name: string; color: string }[];
 }
 
-export function PreviewPane({ node, width, diskPath, onOpen }: PreviewPaneProps) {
+export function PreviewPane({ node, width, diskPath, onOpen, fileTags }: PreviewPaneProps) {
   if (node.kind === "folder") {
     return (
       <div
@@ -53,7 +54,7 @@ export function PreviewPane({ node, width, diskPath, onOpen }: PreviewPaneProps)
         gap: 18,
       }}
     >
-      <FilePreview node={node} diskPath={diskPath} onOpen={onOpen} />
+      <FilePreview node={node} diskPath={diskPath} onOpen={onOpen} fileTags={fileTags} />
     </div>
   );
 }
@@ -117,7 +118,7 @@ function FolderPreview({ node }: { node: FileNode }) {
   );
 }
 
-function FilePreview({ node, diskPath, onOpen }: { node: FileNode; diskPath?: string; onOpen?: () => void }) {
+function FilePreview({ node, diskPath, onOpen, fileTags }: { node: FileNode; diskPath?: string; onOpen?: () => void; fileTags?: { name: string; color: string }[] }) {
   const isImage = node.kind === "image";
   const assetUrl = useAssetUrl(isImage ? diskPath : undefined);
 
@@ -189,7 +190,7 @@ function FilePreview({ node, diskPath, onOpen }: { node: FileNode; diskPath?: st
         </div>
       </div>
 
-      <MetaList items={buildMeta(node)} />
+      <MetaList items={buildMeta(node, fileTags)} />
 
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
         <PreviewBtn icon="eye" label="Quick Look" kbd={["Space"]} onClick={onOpen} />
@@ -215,7 +216,7 @@ function kindLabel(k: string): string {
   return map[k] || "File";
 }
 
-function buildMeta(node: FileNode): [string, string][] {
+function buildMeta(node: FileNode, fileTags?: { name: string; color: string }[]): [string, string][] {
   const base: [string, string][] = [
     ["Kind", kindLabel(node.kind)],
     ["Size", node.size || "\u2014"],
@@ -224,7 +225,10 @@ function buildMeta(node: FileNode): [string, string][] {
   if (node.dims) base.splice(2, 0, ["Dimensions", node.dims]);
   if (node.duration) base.splice(2, 0, ["Duration", node.duration]);
   base.push(["Where", "~/projects/..."]);
-  base.push(["Tags", "\u2014"]);
+  const tagNames = fileTags && fileTags.length > 0
+    ? fileTags.map((t) => t.name).join(", ")
+    : "\u2014";
+  base.push(["Tags", tagNames]);
   return base;
 }
 

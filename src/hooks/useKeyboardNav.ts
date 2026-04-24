@@ -23,6 +23,7 @@ interface KeyboardNavOptions {
   onCut: () => void;
   onPaste: () => void;
   onTrash: () => void;
+  onToggleTagPicker: () => void;
 }
 
 export function useKeyboardNav(opts: KeyboardNavOptions) {
@@ -53,6 +54,7 @@ export function useKeyboardNav(opts: KeyboardNavOptions) {
         onCut,
         onPaste,
         onTrash,
+        onToggleTagPicker,
       } = ref.current;
 
       const target = e.target as HTMLElement;
@@ -78,6 +80,7 @@ export function useKeyboardNav(opts: KeyboardNavOptions) {
 
       if (meta && e.key === "[") { e.preventDefault(); goBack(); return; }
       if (meta && e.key === "]") { e.preventDefault(); goFwd(); return; }
+      if (meta && e.key.toLowerCase() === "t") { e.preventDefault(); onToggleTagPicker(); return; }
       if (meta && e.key.toLowerCase() === "c") { e.preventDefault(); onCopy(); return; }
       if (meta && e.key.toLowerCase() === "x") { e.preventDefault(); onCut(); return; }
       if (meta && e.key.toLowerCase() === "v") { e.preventDefault(); onPaste(); return; }

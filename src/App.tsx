@@ -9,6 +9,7 @@ import { Settings } from "@/overlays/Settings";
 import { Cheatsheet } from "@/overlays/Cheatsheet";
 import { ContextMenu } from "@/overlays/ContextMenu";
 import { FolderPalette } from "@/overlays/FolderPalette";
+import { TagPicker } from "@/overlays/TagPicker";
 import { useTheme } from "@/hooks/useTheme";
 import { useKeyboardNav } from "@/hooks/useKeyboardNav";
 import { useRealFileTree } from "@/hooks/useRealFileTree";
@@ -58,6 +59,7 @@ function buildSidebarSections(
   wslDistros: { name: string; path: string }[],
   drives: { letter: string; path: string; label: string | null }[],
   pinnedFolders: { name: string; path: string }[],
+  tags?: { id: string; name: string; color: string }[],
 ): SidebarSection[] {
   const pathBasename = (p: string) => p.split(/[/\\]/).filter(Boolean).pop() || p;
 
@@ -98,15 +100,15 @@ function buildSidebarSections(
     });
   }
 
-  result.push({
-    label: "Tags",
-    items: [
-      { id: "t-red", name: "Urgent", icon: "tag", color: "#C44536" },
-      { id: "t-org", name: "Review", icon: "tag", color: "#D97706" },
-      { id: "t-grn", name: "Done", icon: "tag", color: "#3F6B3A" },
-      { id: "t-blu", name: "Reference", icon: "tag", color: "#4A6B8A" },
-    ],
-  });
+  const tagItems = (tags || []).map((t) => ({
+    id: t.id,
+    name: t.name,
+    icon: "tag",
+    color: t.color,
+  }));
+  if (tagItems.length > 0) {
+    result.push({ label: "Tags", items: tagItems });
+  }
 
   result.push({ label: "", items: [{ id: "trash", name: "Trash", icon: "trash" }] });
 
@@ -119,7 +121,7 @@ function App() {
   const initData = useInit();
 
   // Config (for saving changes — init provides the initial read)
-  const { config, updateConfig, pinFolder, unpinFolder, isPinned } = useConfig();
+  const { config, updateConfig, pinFolder, unpinFolder, isPinned, addTag, removeTag, updateTag, tagFile, untagFile, getFileTags } = useConfig();
 
   // Determine if init is done
   const tauriReady = IS_TAURI && initData !== null;
@@ -207,8 +209,9 @@ function App() {
       initData.wslDistros,
       initData.drives,
       config.pinned_folders,
+      config.tags,
     );
-  }, [initData, config.pinned_folders]);
+  }, [initData, config.pinned_folders, config.tags]);
 
   // Overlay state
   const [paletteOpen, setPaletteOpen] = useState(false);
@@ -219,6 +222,7 @@ function App() {
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; nodeId: string; isSidebar?: boolean } | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [clipboard, setClipboard] = useState<{ path: string; name: string; mode: "copy" | "cut" } | null>(null);
+  const [tagPickerOpen, setTagPickerOpen] = useState(false);
 
   const showToast = useCallback((msg: string) => {
     setToast(msg);
@@ -277,6 +281,8 @@ function App() {
       handleCut();
     } else if (cmd.id === "c-paste") {
       handlePaste();
+    } else if (cmd.id === "c-tag") {
+      setTagPickerOpen(true);
     } else if (cmd.id === "c-trash") {
       handleTrash();
     } else if (cmd.id === "c-quick-look") {
@@ -368,7 +374,7 @@ function App() {
     }
   }, [isTauriReady, nav.selection, realNav.state, tree]);
 
-  const overlaysOpen = paletteOpen || folderPaletteOpen || searchOpen || settingsOpen || cheatsheetOpen;
+  const overlaysOpen = paletteOpen || folderPaletteOpen || searchOpen || settingsOpen || cheatsheetOpen || tagPickerOpen;
 
   useKeyboardNav({
     tree,
@@ -391,6 +397,7 @@ function App() {
       setSearchOpen(false);
       setSettingsOpen(false);
       setCheatsheetOpen(false);
+      setTagPickerOpen(false);
       setContextMenu(null);
     },
     onOpen: handleOpenFile,
@@ -398,6 +405,7 @@ function App() {
     onCut: handleCut,
     onPaste: handlePaste,
     onTrash: handleTrash,
+    onToggleTagPicker: () => setTagPickerOpen((v) => !v),
   });
 
   const pathNames = useMemo(() => buildPathNames(tree, nav.selection), [tree, nav.selection]);
@@ -434,6 +442,11 @@ function App() {
     const lastId = nav.selection[nav.selection.length - 1];
     return realNav.state?.pathMap.get(lastId) ?? undefined;
   }, [isTauriReady, nav.selection, realNav.state]);
+
+  const selectedFileTags = useMemo(() => {
+    if (!selectedDiskPath) return undefined;
+    return getFileTags(selectedDiskPath);
+  }, [selectedDiskPath, getFileTags]);
 
   // Show skeleton while loading in Tauri mode
   if (IS_TAURI && !isTauriReady) {
@@ -508,6 +521,7 @@ function App() {
             setFocusedCol={nav.setFocusedCol}
             selectedDiskPath={selectedDiskPath}
             onOpenFile={handleOpenFile}
+            fileTags={selectedFileTags}
           />
         </div>
 
@@ -522,6 +536,21 @@ function App() {
           sections={isTauriReady && realSidebar ? realSidebar : SIDEBAR_DATA}
         />
         <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
+        <TagPicker
+          open={tagPickerOpen}
+          onClose={() => setTagPickerOpen(false)}
+          tags={config.tags}
+          activeTags={selectedFileTags || []}
+          onToggle={(tagId) => {
+            if (!selectedDiskPath) return;
+            const isActive = selectedFileTags?.some((t) => t.id === tagId);
+            if (isActive) {
+              untagFile(selectedDiskPath, tagId);
+            } else {
+              tagFile(selectedDiskPath, tagId);
+            }
+          }}
+        />
         <Settings
           open={settingsOpen}
           onClose={() => setSettingsOpen(false)}
