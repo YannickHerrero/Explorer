@@ -46,8 +46,8 @@ export function useKeyboardNav({
       const meta = e.metaKey || e.ctrlKey;
 
       // Global shortcuts (work even with overlays)
-      if (meta && e.key === "k") { e.preventDefault(); onTogglePalette(); return; }
-      if (meta && e.key === "f") { e.preventDefault(); onToggleSearch(); return; }
+      if (meta && e.key.toLowerCase() === "k") { e.preventDefault(); onTogglePalette(); return; }
+      if (meta && e.key.toLowerCase() === "f") { e.preventDefault(); onToggleSearch(); return; }
       if (meta && e.key === ",") { e.preventDefault(); onToggleSettings(); return; }
       if (meta && e.key === "/") { e.preventDefault(); onToggleCheatsheet(); return; }
 
