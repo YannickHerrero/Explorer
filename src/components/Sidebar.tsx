@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Icon } from "@/icons/Icon";
 import type { SidebarSection, SidebarItem, DensityTokens } from "@/types";
 
@@ -91,7 +92,7 @@ export function Sidebar({ width, activeId, onNavigate, density, sections }: Side
             </div>
           )}
           {section.items.map((item) => (
-            <SidebarRow
+            <MemoSidebarRow
               key={item.id}
               item={item}
               active={activeId === item.id}
@@ -104,6 +105,8 @@ export function Sidebar({ width, activeId, onNavigate, density, sections }: Side
     </div>
   );
 }
+
+const MemoSidebarRow = memo(SidebarRow);
 
 function SidebarRow({
   item,

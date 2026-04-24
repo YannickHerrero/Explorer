@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, memo } from "react";
 import { Icon, kindIcon } from "@/icons/Icon";
 import { PreviewPane } from "@/components/PreviewPane";
 import { resolveSelection } from "@/data";
@@ -59,8 +59,8 @@ export function Columns({ tree, selection, onSelect, onNavigate, density, focuse
       }}
     >
       {columns.map((col, idx) => (
-        <Column
-          key={idx}
+        <MemoColumn
+          key={selection[idx] || `col-${idx}`}
           items={col.items}
           selectedId={selection[idx + 1]}
           onSelect={(id) => onSelect(idx, id)}
@@ -79,6 +79,8 @@ export function Columns({ tree, selection, onSelect, onNavigate, density, focuse
     </div>
   );
 }
+
+const MemoColumn = memo(Column);
 
 function Column({
   items,
@@ -126,7 +128,7 @@ function Column({
         </div>
       ) : (
         items.map((item) => (
-          <FileRow
+          <MemoFileRow
             key={item.id}
             item={item}
             selected={item.id === selectedId}
@@ -140,6 +142,8 @@ function Column({
     </div>
   );
 }
+
+const MemoFileRow = memo(FileRow);
 
 function FileRow({
   item,
