@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Icon } from "@/icons/Icon";
 import { THEMES } from "@/themes";
 import type { ThemeKey, DensityKey, ThemeColors } from "@/types";
@@ -43,6 +43,16 @@ export function Settings({
   onUpdateTag,
 }: SettingsProps) {
   const [activeTab, setActiveTab] = useState("General");
+  const [version, setVersion] = useState("");
+
+  useEffect(() => {
+    if ("__TAURI_INTERNALS__" in window) {
+      import("@tauri-apps/api/app").then(({ getVersion }) => {
+        getVersion().then(setVersion);
+      });
+    }
+  }, []);
+
   if (!open) return null;
 
   return (
@@ -135,7 +145,7 @@ export function Settings({
               color: "var(--muted)",
             }}
           >
-            v0.1.0
+            {version ? `v${version}` : ""}
           </div>
         </div>
 
