@@ -197,18 +197,17 @@ function App() {
       style={{
         width: "100%",
         height: "100%",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background: themeKey === "ink" ? "#0a0a0a" : "#1a1915",
-        padding: 24,
         fontFamily: "var(--font-sans)",
+        background: "var(--paper)",
+        overflow: "hidden",
+        display: "flex",
+        flexDirection: "column",
+        position: "relative",
       }}
       onContextMenu={(e) => {
         const row = (e.target as HTMLElement).closest(".file-row");
         if (row) {
           e.preventDefault();
-          // Find which node was right-clicked by walking up to find the selection
           const nodeId = row.getAttribute("data-node-id");
           if (nodeId) {
             setContextMenu({ x: e.clientX, y: e.clientY, nodeId });
@@ -218,19 +217,6 @@ function App() {
         }
       }}
     >
-      <div
-        style={{
-          width: "min(1320px, 100%)",
-          height: "min(840px, 100%)",
-          background: "var(--paper)",
-          borderRadius: 10,
-          boxShadow: "0 30px 90px rgba(0,0,0,0.35), 0 0 0 0.5px rgba(0,0,0,0.3)",
-          overflow: "hidden",
-          display: "flex",
-          flexDirection: "column",
-          position: "relative",
-        }}
-      >
         <Chrome
           path={pathNames}
           onBack={nav.goBack}
@@ -329,7 +315,6 @@ function App() {
             {toast}
           </div>
         )}
-      </div>
     </div>
   );
 }

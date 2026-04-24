@@ -40,14 +40,17 @@ export function Chrome({
         flexShrink: 0,
       }}
     >
-      {/* Window controls */}
-      <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-        <button className="wc close" aria-label="Close" />
-        <button className="wc min" aria-label="Minimize" />
-        <button className="wc max" aria-label="Maximize" />
-      </div>
-
-      <div style={{ width: 10 }} />
+      {/* Window controls — only shown in browser mode, Tauri has native ones */}
+      {!("__TAURI_INTERNALS__" in window) && (
+        <>
+          <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+            <button className="wc close" aria-label="Close" />
+            <button className="wc min" aria-label="Minimize" />
+            <button className="wc max" aria-label="Maximize" />
+          </div>
+          <div style={{ width: 10 }} />
+        </>
+      )}
 
       {/* Nav */}
       <div style={{ display: "flex", gap: 2 }}>
