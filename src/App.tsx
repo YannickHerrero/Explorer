@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { Chrome } from "@/components/Chrome";
 import { Sidebar, SIDEBAR_DATA } from "@/components/Sidebar";
 import { Columns } from "@/components/Columns";
@@ -60,7 +60,27 @@ function App() {
   const [showHidden] = useState(false);
 
   // Config (persisted preferences + pinned folders)
-  const { config, pinFolder, unpinFolder, isPinned } = useConfig();
+  const { config, updateConfig, pinFolder, unpinFolder, isPinned } = useConfig();
+  const [hideTitlebar, setHideTitlebar] = useState(false);
+
+  // Sync titlebar state from config on load
+  useEffect(() => {
+    setHideTitlebar(config.hide_titlebar);
+  }, [config.hide_titlebar]);
+
+  // Apply/remove window decorations when toggled
+  useEffect(() => {
+    if (!IS_TAURI) return;
+    (async () => {
+      const { getCurrentWindow } = await import("@tauri-apps/api/window");
+      getCurrentWindow().setDecorations(!hideTitlebar);
+    })();
+  }, [hideTitlebar]);
+
+  const handleSetHideTitlebar = useCallback((v: boolean) => {
+    setHideTitlebar(v);
+    updateConfig({ hide_titlebar: v });
+  }, [updateConfig]);
 
   // Navigation: pick real or mock based on runtime
   const realNav = useRealFileTree(showHidden);
@@ -229,6 +249,7 @@ function App() {
           onToggleCheatsheet={() => setCheatsheetOpen(!cheatsheetOpen)}
           sidebarOpen={sidebarOpen}
           searchOpen={searchOpen}
+          hideTitlebar={hideTitlebar}
         />
 
         <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
@@ -266,6 +287,8 @@ function App() {
           setDensity={setDensityKey}
           sidebarOpen={sidebarOpen}
           setSidebarOpen={setSidebarOpen}
+          hideTitlebar={hideTitlebar}
+          setHideTitlebar={handleSetHideTitlebar}
         />
         <Cheatsheet open={cheatsheetOpen} onClose={() => setCheatsheetOpen(false)} />
 
