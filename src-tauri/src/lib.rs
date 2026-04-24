@@ -2,6 +2,7 @@ mod commands;
 
 use commands::config::{load_config, save_config};
 use commands::fs::{get_drives, get_file_meta, get_home_dir, get_user_dirs, get_wsl_distros, read_dir};
+use commands::init::get_init_data;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -16,6 +17,7 @@ pub fn run() {
             get_file_meta,
             load_config,
             save_config,
+            get_init_data,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
