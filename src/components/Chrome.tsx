@@ -1,5 +1,7 @@
 import { Icon, Kbd } from "@/icons/Icon";
 
+const IS_TAURI = "__TAURI_INTERNALS__" in window;
+
 interface ChromeProps {
   path: string[];
   onBack: () => void;
@@ -12,6 +14,22 @@ interface ChromeProps {
   canFwd: boolean;
   searchOpen: boolean;
   sidebarOpen: boolean;
+  hideTitlebar: boolean;
+}
+
+async function windowAction(action: "close" | "minimize" | "toggleMaximize") {
+  if (!IS_TAURI) return;
+  const { getCurrentWindow } = await import("@tauri-apps/api/window");
+  const win = getCurrentWindow();
+  if (action === "close") win.close();
+  else if (action === "minimize") win.minimize();
+  else win.toggleMaximize();
+}
+
+async function startDrag() {
+  if (!IS_TAURI) return;
+  const { getCurrentWindow } = await import("@tauri-apps/api/window");
+  getCurrentWindow().startDragging();
 }
 
 export function Chrome({
@@ -26,9 +44,25 @@ export function Chrome({
   canFwd,
   searchOpen,
   sidebarOpen,
+  hideTitlebar,
 }: ChromeProps) {
+  // Show custom window controls when titlebar is hidden (Tauri) or in browser mode
+  const showWindowControls = !IS_TAURI || hideTitlebar;
+
   return (
     <div
+      onMouseDown={(e) => {
+        // Allow dragging from the chrome bar when titlebar is hidden
+        if (hideTitlebar && IS_TAURI && e.target === e.currentTarget) {
+          startDrag();
+        }
+      }}
+      onDoubleClick={(e) => {
+        // Double-click to maximize/restore when titlebar is hidden
+        if (hideTitlebar && IS_TAURI && e.target === e.currentTarget) {
+          windowAction("toggleMaximize");
+        }
+      }}
       style={{
         height: 44,
         display: "flex",
@@ -40,13 +74,12 @@ export function Chrome({
         flexShrink: 0,
       }}
     >
-      {/* Window controls — only shown in browser mode, Tauri has native ones */}
-      {!("__TAURI_INTERNALS__" in window) && (
+      {showWindowControls && (
         <>
           <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-            <button className="wc close" aria-label="Close" />
-            <button className="wc min" aria-label="Minimize" />
-            <button className="wc max" aria-label="Maximize" />
+            <button className="wc close" aria-label="Close" onClick={() => windowAction("close")} />
+            <button className="wc min" aria-label="Minimize" onClick={() => windowAction("minimize")} />
+            <button className="wc max" aria-label="Maximize" onClick={() => windowAction("toggleMaximize")} />
           </div>
           <div style={{ width: 10 }} />
         </>
@@ -60,8 +93,19 @@ export function Chrome({
 
       <IconBtn name="sidebar" onClick={onToggleSidebar} active={sidebarOpen} title="Toggle Sidebar" />
 
-      {/* Breadcrumbs */}
+      {/* Breadcrumbs — draggable region when titlebar is hidden */}
       <div
+        onMouseDown={(e) => {
+          if (hideTitlebar && IS_TAURI) {
+            e.preventDefault();
+            startDrag();
+          }
+        }}
+        onDoubleClick={() => {
+          if (hideTitlebar && IS_TAURI) {
+            windowAction("toggleMaximize");
+          }
+        }}
         style={{
           flex: 1,
           display: "flex",
@@ -73,6 +117,7 @@ export function Chrome({
           color: "var(--ink)",
           letterSpacing: -0.1,
           overflow: "hidden",
+          cursor: hideTitlebar ? "default" : undefined,
         }}
       >
         <Breadcrumbs path={path} />
