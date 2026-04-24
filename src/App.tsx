@@ -54,20 +54,23 @@ function useMockNav() {
 
 // ── App ─────────────────────────────────────────────────────────────
 function App() {
-  const { themeKey, setThemeKey } = useTheme("sage");
-  const [densityKey, setDensityKey] = useState<DensityKey>("comfortable");
-  const density = DENSITY[densityKey];
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [showHidden] = useState(false);
-
   // Config (persisted preferences + pinned folders)
   const { config, updateConfig, pinFolder, unpinFolder, isPinned } = useConfig();
-  const [hideTitlebar, setHideTitlebar] = useState(false);
 
-  // Sync titlebar state from config on load
+  const { themeKey, setThemeKey } = useTheme(config.theme);
+  const [densityKey, setDensityKey] = useState<DensityKey>(config.density);
+  const density = DENSITY[densityKey];
+  const [sidebarOpen, setSidebarOpen] = useState(config.sidebar_open);
+  const [showHidden] = useState(config.show_hidden);
+  const [hideTitlebar, setHideTitlebar] = useState(config.hide_titlebar);
+
+  // Sync local state from config when it loads from disk
   useEffect(() => {
+    setThemeKey(config.theme);
+    setDensityKey(config.density);
+    setSidebarOpen(config.sidebar_open);
     setHideTitlebar(config.hide_titlebar);
-  }, [config.hide_titlebar]);
+  }, [config.theme, config.density, config.sidebar_open, config.hide_titlebar, setThemeKey]);
 
   // Apply/remove window decorations when toggled
   useEffect(() => {
@@ -77,6 +80,21 @@ function App() {
       getCurrentWindow().setDecorations(!hideTitlebar);
     })();
   }, [hideTitlebar]);
+
+  const handleSetTheme = useCallback((t: ThemeKey) => {
+    setThemeKey(t);
+    updateConfig({ theme: t });
+  }, [setThemeKey, updateConfig]);
+
+  const handleSetDensity = useCallback((d: DensityKey) => {
+    setDensityKey(d);
+    updateConfig({ density: d });
+  }, [updateConfig]);
+
+  const handleSetSidebarOpen = useCallback((v: boolean) => {
+    setSidebarOpen(v);
+    updateConfig({ sidebar_open: v });
+  }, [updateConfig]);
 
   const handleSetHideTitlebar = useCallback((v: boolean) => {
     setHideTitlebar(v);
@@ -146,14 +164,14 @@ function App() {
   const runCommand = (cmd: Command) => {
     if (cmd.id.startsWith("c-theme-")) {
       const t = cmd.id.replace("c-theme-", "") as ThemeKey;
-      setThemeKey(t);
+      handleSetTheme(t);
       showToast(`Theme: ${THEMES[t].name}`);
     } else if (cmd.id === "c-settings") {
       setSettingsOpen(true);
     } else if (cmd.id === "c-shortcuts") {
       setCheatsheetOpen(true);
     } else if (cmd.id === "c-toggle-sidebar") {
-      setSidebarOpen((v) => !v);
+      handleSetSidebarOpen(!sidebarOpen);
     } else {
       showToast(cmd.name);
     }
@@ -249,7 +267,7 @@ function App() {
           canFwd={nav.histIdx < nav.historyLength - 1}
           onPalette={() => setPaletteOpen(true)}
           onSearch={() => setSearchOpen(!searchOpen)}
-          onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+          onToggleSidebar={() => handleSetSidebarOpen(!sidebarOpen)}
           onToggleCheatsheet={() => setCheatsheetOpen(!cheatsheetOpen)}
           sidebarOpen={sidebarOpen}
           searchOpen={searchOpen}
@@ -292,11 +310,11 @@ function App() {
           open={settingsOpen}
           onClose={() => setSettingsOpen(false)}
           theme={themeKey}
-          setTheme={setThemeKey}
+          setTheme={handleSetTheme}
           density={densityKey}
-          setDensity={setDensityKey}
+          setDensity={handleSetDensity}
           sidebarOpen={sidebarOpen}
-          setSidebarOpen={setSidebarOpen}
+          setSidebarOpen={handleSetSidebarOpen}
           hideTitlebar={hideTitlebar}
           setHideTitlebar={handleSetHideTitlebar}
         />
