@@ -12,6 +12,8 @@ interface SettingsProps {
   setDensity: (d: DensityKey) => void;
   sidebarOpen: boolean;
   setSidebarOpen: (v: boolean) => void;
+  hideTitlebar: boolean;
+  setHideTitlebar: (v: boolean) => void;
 }
 
 export function Settings({
@@ -23,6 +25,8 @@ export function Settings({
   setDensity,
   sidebarOpen,
   setSidebarOpen,
+  hideTitlebar,
+  setHideTitlebar,
 }: SettingsProps) {
   if (!open) return null;
 
@@ -171,6 +175,11 @@ export function Settings({
           {/* Sidebar toggle */}
           <Section title="Sidebar" subtitle="Devices, favorites, cloud drives, and trash.">
             <Toggle value={sidebarOpen} onChange={setSidebarOpen} label={sidebarOpen ? "Visible" : "Hidden"} />
+          </Section>
+
+          {/* Window */}
+          <Section title="Window" subtitle="Control the native window appearance.">
+            <Toggle value={hideTitlebar} onChange={setHideTitlebar} label={hideTitlebar ? "Title bar hidden" : "Title bar visible"} />
           </Section>
 
           {/* Keyboard */}
