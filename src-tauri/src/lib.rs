@@ -1,7 +1,7 @@
 mod commands;
 
 use commands::config::{load_config, save_config};
-use commands::fs::{get_file_meta, get_home_dir, get_user_dirs, read_dir};
+use commands::fs::{get_drives, get_file_meta, get_home_dir, get_user_dirs, get_wsl_distros, read_dir};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -11,6 +11,8 @@ pub fn run() {
             read_dir,
             get_home_dir,
             get_user_dirs,
+            get_wsl_distros,
+            get_drives,
             get_file_meta,
             load_config,
             save_config,

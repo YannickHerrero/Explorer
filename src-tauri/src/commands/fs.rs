@@ -30,6 +30,81 @@ pub fn get_user_dirs() -> Result<UserDirs, String> {
     })
 }
 
+#[derive(Debug, Serialize)]
+pub struct WslDistro {
+    pub name: String,
+    pub path: String,
+}
+
+#[tauri::command]
+pub fn get_wsl_distros() -> Vec<WslDistro> {
+    let mut distros = Vec::new();
+
+    // WSL filesystems are at \\wsl.localhost\ or \\wsl$\
+    for base in &["\\\\wsl.localhost", "\\\\wsl$"] {
+        let base_path = PathBuf::from(base);
+        if let Ok(entries) = fs::read_dir(&base_path) {
+            for entry in entries.flatten() {
+                let name = entry.file_name().to_string_lossy().to_string();
+                let path = entry.path().to_string_lossy().to_string();
+                // Avoid duplicates
+                if !distros.iter().any(|d: &WslDistro| d.name == name) {
+                    distros.push(WslDistro { name, path });
+                }
+            }
+        }
+    }
+
+    distros
+}
+
+#[derive(Debug, Serialize)]
+pub struct DriveInfo {
+    pub letter: String,
+    pub path: String,
+    pub label: Option<String>,
+}
+
+#[tauri::command]
+pub fn get_drives() -> Vec<DriveInfo> {
+    let mut drives = Vec::new();
+
+    // On Windows, check common drive letters
+    #[cfg(target_os = "windows")]
+    {
+        for letter in b'A'..=b'Z' {
+            let drive_path = format!("{}:\\", letter as char);
+            let path = PathBuf::from(&drive_path);
+            if path.exists() {
+                drives.push(DriveInfo {
+                    letter: format!("{}:", letter as char),
+                    path: drive_path,
+                    label: None,
+                });
+            }
+        }
+    }
+
+    // On Linux, list mount points (useful for testing)
+    #[cfg(not(target_os = "windows"))]
+    {
+        if let Ok(entries) = fs::read_dir("/mnt") {
+            for entry in entries.flatten() {
+                if entry.path().is_dir() {
+                    let name = entry.file_name().to_string_lossy().to_string();
+                    drives.push(DriveInfo {
+                        letter: name.clone(),
+                        path: entry.path().to_string_lossy().to_string(),
+                        label: Some(name),
+                    });
+                }
+            }
+        }
+    }
+
+    drives
+}
+
 #[derive(Debug, Serialize, Clone)]
 pub struct FileEntry {
     pub id: String,
