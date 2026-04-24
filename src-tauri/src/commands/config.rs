@@ -31,7 +31,7 @@ impl Default for AppConfig {
             sidebar_open: true,
             show_hidden: false,
             vim_navigation: true,
-            hide_titlebar: false,
+            hide_titlebar: true,
             last_path: None,
             pinned_folders: Vec::new(),
         }
