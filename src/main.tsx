@@ -12,6 +12,13 @@ import "@fontsource/jetbrains-mono/500.css";
 import App from "./App";
 import "./styles/global.css";
 
+// Show the Tauri window as soon as React is ready to paint
+if ("__TAURI_INTERNALS__" in window) {
+  import("@tauri-apps/api/window").then(({ getCurrentWindow }) => {
+    getCurrentWindow().show();
+  });
+}
+
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <App />
