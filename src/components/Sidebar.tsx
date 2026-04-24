@@ -57,9 +57,11 @@ interface SidebarProps {
   activeId: string;
   onNavigate: (item: SidebarItem) => void;
   density: DensityTokens;
+  sections?: SidebarSection[];
 }
 
-export function Sidebar({ width, activeId, onNavigate, density }: SidebarProps) {
+export function Sidebar({ width, activeId, onNavigate, density, sections }: SidebarProps) {
+  const data = sections || SIDEBAR_DATA;
   return (
     <div
       style={{
@@ -71,7 +73,7 @@ export function Sidebar({ width, activeId, onNavigate, density }: SidebarProps) 
         padding: "8px 0 16px",
       }}
     >
-      {SIDEBAR_DATA.map((section, si) => (
+      {data.map((section, si) => (
         <div key={si} style={{ marginBottom: 12 }}>
           {section.label && (
             <div
