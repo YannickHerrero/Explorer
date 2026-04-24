@@ -179,7 +179,7 @@ export function Settings({
 
           {/* Window */}
           <Section title="Window" subtitle="Control the native window appearance.">
-            <Toggle value={hideTitlebar} onChange={setHideTitlebar} label={hideTitlebar ? "Title bar hidden" : "Title bar visible"} />
+            <Toggle value={hideTitlebar} onChange={setHideTitlebar} label="Hide native title bar" />
           </Section>
 
           {/* Keyboard */}
