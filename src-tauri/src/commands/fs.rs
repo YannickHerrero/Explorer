@@ -392,3 +392,9 @@ pub fn move_path(source: String, dest_dir: String) -> Result<String, String> {
     fs::rename(&src, &dest).map_err(|e| format!("Move failed: {}", e))?;
     Ok(dest.to_string_lossy().to_string())
 }
+
+#[tauri::command]
+pub fn trash_path(path: String) -> Result<(), String> {
+    trash::delete(&path).map_err(|e| format!("Failed to move to trash: {}", e))?;
+    Ok(())
+}

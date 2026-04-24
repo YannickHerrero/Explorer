@@ -22,6 +22,7 @@ interface KeyboardNavOptions {
   onCopy: () => void;
   onCut: () => void;
   onPaste: () => void;
+  onTrash: () => void;
 }
 
 export function useKeyboardNav(opts: KeyboardNavOptions) {
@@ -51,6 +52,7 @@ export function useKeyboardNav(opts: KeyboardNavOptions) {
         onCopy,
         onCut,
         onPaste,
+        onTrash,
       } = ref.current;
 
       const target = e.target as HTMLElement;
@@ -133,7 +135,7 @@ export function useKeyboardNav(opts: KeyboardNavOptions) {
         onPaste();
       } else if (meta && e.key === "Backspace") {
         e.preventDefault();
-        onToast("Moved to Trash");
+        onTrash();
       }
     };
 

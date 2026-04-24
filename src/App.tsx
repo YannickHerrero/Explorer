@@ -277,7 +277,9 @@ function App() {
       handleCut();
     } else if (cmd.id === "c-paste") {
       handlePaste();
-    } else if (cmd.id === "c-quick-look" || cmd.id === "c-open") {
+    } else if (cmd.id === "c-trash") {
+      handleTrash();
+    } else if (cmd.id === "c-quick-look") {
       handleOpenFile();
     } else {
       showToast(cmd.name);
@@ -349,6 +351,23 @@ function App() {
     }
   }, [isTauriReady, clipboard, tree, nav.selection, realNav.state]);
 
+  const handleTrash = useCallback(async () => {
+    if (!isTauriReady) return;
+    const lastId = nav.selection[nav.selection.length - 1];
+    const diskPath = realNav.state?.pathMap.get(lastId);
+    const node = resolveSelection(tree, nav.selection);
+    if (diskPath && node) {
+      try {
+        const { invoke } = await import("@tauri-apps/api/core");
+        await invoke("trash_path", { path: diskPath });
+        showToast(`Moved "${node.name}" to Trash`);
+        if (realNav.refreshCurrentDir) realNav.refreshCurrentDir();
+      } catch (err) {
+        showToast(`Trash failed: ${err}`);
+      }
+    }
+  }, [isTauriReady, nav.selection, realNav.state, tree]);
+
   const overlaysOpen = paletteOpen || folderPaletteOpen || searchOpen || settingsOpen || cheatsheetOpen;
 
   useKeyboardNav({
@@ -378,6 +397,7 @@ function App() {
     onCopy: handleCopy,
     onCut: handleCut,
     onPaste: handlePaste,
+    onTrash: handleTrash,
   });
 
   const pathNames = useMemo(() => buildPathNames(tree, nav.selection), [tree, nav.selection]);
@@ -521,7 +541,11 @@ function App() {
             x={contextMenu.x}
             y={contextMenu.y}
             onClose={() => setContextMenu(null)}
-            onRun={(item) => showToast(item.name)}
+            onRun={(item) => {
+              if (item.id === "trash") handleTrash();
+              else if (item.id === "open" || item.id === "ql") handleOpenFile();
+              else showToast(item.name);
+            }}
             isFolder={contextNode?.kind === "folder"}
             isSidebar={contextMenu.isSidebar}
             isPinned={contextDiskPath ? isPinned(contextDiskPath) : false}
