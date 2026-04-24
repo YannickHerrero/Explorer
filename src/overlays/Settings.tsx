@@ -80,6 +80,8 @@ export function Settings({
             background: "var(--paper-alt)",
             borderRight: "1px solid var(--line)",
             padding: "18px 10px",
+            display: "flex",
+            flexDirection: "column",
           }}
         >
           <div
@@ -124,6 +126,17 @@ export function Settings({
               </div>
             );
           })}
+          <div style={{ flex: 1 }} />
+          <div
+            style={{
+              padding: "10px 10px 0",
+              fontFamily: "var(--font-mono)",
+              fontSize: 10,
+              color: "var(--muted)",
+            }}
+          >
+            v0.1.0
+          </div>
         </div>
 
         {/* Settings content */}
