@@ -47,7 +47,7 @@ export function Chrome({
   hideTitlebar,
 }: ChromeProps) {
   // Show custom window controls when titlebar is hidden (Tauri) or in browser mode
-  const showWindowControls = !IS_TAURI || hideTitlebar;
+
 
   return (
     <div
@@ -74,17 +74,6 @@ export function Chrome({
         flexShrink: 0,
       }}
     >
-      {showWindowControls && (
-        <>
-          <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-            <button className="wc close" aria-label="Close" onClick={() => windowAction("close")} />
-            <button className="wc min" aria-label="Minimize" onClick={() => windowAction("minimize")} />
-            <button className="wc max" aria-label="Maximize" onClick={() => windowAction("toggleMaximize")} />
-          </div>
-          <div style={{ width: 10 }} />
-        </>
-      )}
-
       {/* Nav */}
       <div style={{ display: "flex", gap: 2 }}>
         <IconBtn name="chevron-left" onClick={onBack} disabled={!canBack} title="Back  Ctrl+[" />

@@ -19,22 +19,6 @@ button {
   font-family: inherit;
 }
 
-/* Window control dots */
-.wc {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  transition: filter 120ms;
-}
-
-.wc.close { background: #FF5F57; }
-.wc.min   { background: #FEBC2E; }
-.wc.max   { background: #28C840; }
-.wc:hover { filter: brightness(0.92); }
-
 /* Icon button hover */
 .icon-btn:hover:not(:disabled) {
   background: var(--paper-deep) !important;
