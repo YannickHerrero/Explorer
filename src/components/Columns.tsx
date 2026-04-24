@@ -1,10 +1,11 @@
 import { useEffect, useRef } from "react";
 import { Icon, kindIcon } from "@/icons/Icon";
 import { PreviewPane } from "@/components/PreviewPane";
-import { TREE, resolveSelection } from "@/data";
+import { resolveSelection } from "@/data";
 import type { FileNode, DensityTokens } from "@/types";
 
 interface ColumnsProps {
+  tree: FileNode;
   selection: string[];
   onSelect: (colIdx: number, id: string) => void;
   onNavigate: (colIdx: number, item: FileNode) => void;
@@ -17,9 +18,9 @@ interface ColumnData {
   items: FileNode[];
 }
 
-function buildColumnsFromSelection(selection: string[]): ColumnData[] {
+export function buildColumnsFromSelection(selection: string[], tree: FileNode): ColumnData[] {
   const cols: ColumnData[] = [];
-  let node = TREE;
+  let node = tree;
   cols.push({ items: node.children || [] });
   for (let i = 1; i < selection.length; i++) {
     const childId = selection[i];
@@ -35,10 +36,8 @@ function buildColumnsFromSelection(selection: string[]): ColumnData[] {
   return cols;
 }
 
-export { buildColumnsFromSelection };
-
-export function Columns({ selection, onSelect, onNavigate, density, focusedCol, setFocusedCol }: ColumnsProps) {
-  const columns = buildColumnsFromSelection(selection);
+export function Columns({ tree, selection, onSelect, onNavigate, density, focusedCol, setFocusedCol }: ColumnsProps) {
+  const columns = buildColumnsFromSelection(selection, tree);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -73,7 +72,7 @@ export function Columns({ selection, onSelect, onNavigate, density, focusedCol, 
         />
       ))}
       <PreviewPane
-        node={resolveSelection(TREE, selection)}
+        node={resolveSelection(tree, selection)}
         density={density}
         width={Math.max(360, density.colW + 80)}
       />

@@ -21,6 +21,9 @@ function App() {
   const density = DENSITY[densityKey];
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
+  // Use mock data tree (real file system integration happens in Tauri mode)
+  const tree = TREE;
+
   // Navigation state
   const [selection, setSelection] = useState(["root", "projects", "explorer", "src", "s1"]);
   const [focusedCol, setFocusedCol] = useState(3);
@@ -64,7 +67,7 @@ function App() {
   const handleSidebarNav = (item: SidebarItem) => {
     if (item.targetPath) {
       const ids = ["root"];
-      let node = TREE;
+      let node = tree;
       for (let i = 1; i < item.targetPath.length; i++) {
         const name = item.targetPath[i];
         const child = (node.children || []).find((c) => c.name === name);
@@ -111,6 +114,7 @@ function App() {
   const overlaysOpen = paletteOpen || searchOpen || settingsOpen || cheatsheetOpen;
 
   useKeyboardNav({
+    tree,
     selection,
     focusedCol,
     setFocusedCol,
@@ -132,8 +136,8 @@ function App() {
     },
   });
 
-  const pathNames = useMemo(() => buildPathNames(TREE, selection), [selection]);
-  const currentNode = useMemo(() => resolveSelection(TREE, selection), [selection]);
+  const pathNames = useMemo(() => buildPathNames(tree, selection), [tree, selection]);
+  const currentNode = useMemo(() => resolveSelection(tree, selection), [tree, selection]);
 
   const activeSidebarId = useMemo(() => {
     if (selection[1]) {
@@ -199,6 +203,7 @@ function App() {
             />
           )}
           <Columns
+            tree={tree}
             selection={selection}
             onSelect={handleSelect}
             onNavigate={handleNavigate}

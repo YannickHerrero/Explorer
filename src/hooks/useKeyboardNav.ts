@@ -1,7 +1,9 @@
 import { useEffect, useCallback } from "react";
 import { buildColumnsFromSelection } from "@/components/Columns";
+import type { FileNode } from "@/types";
 
 interface KeyboardNavOptions {
+  tree: FileNode;
   selection: string[];
   focusedCol: number;
   setFocusedCol: (col: number) => void;
@@ -18,6 +20,7 @@ interface KeyboardNavOptions {
 }
 
 export function useKeyboardNav({
+  tree,
   selection,
   focusedCol,
   setFocusedCol,
@@ -60,7 +63,7 @@ export function useKeyboardNav({
       if (meta && e.key === "[") { e.preventDefault(); goBack(); return; }
       if (meta && e.key === "]") { e.preventDefault(); goFwd(); return; }
 
-      const columns = buildColumnsFromSelection(selection);
+      const columns = buildColumnsFromSelection(selection, tree);
       const currentItems = columns[focusedCol]?.items || [];
       const currentSelectedId = selection[focusedCol + 1];
       const currentIdx = currentItems.findIndex((it) => it.id === currentSelectedId);
@@ -106,6 +109,7 @@ export function useKeyboardNav({
       }
     },
     [
+      tree,
       selection,
       focusedCol,
       navigateTo,
