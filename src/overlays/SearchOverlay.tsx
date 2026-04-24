@@ -31,6 +31,7 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
   });
 
   const allFiles = useMemo(() => {
+    if (!open) return [];
     const out: FlatFile[] = [];
     const walk = (node: FileNode, path: string[]) => {
       const p = [...path, node.name];
@@ -41,9 +42,10 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
     };
     walk(TREE, []);
     return out;
-  }, []);
+  }, [open]);
 
   const results = useMemo(() => {
+    if (!open) return [];
     let r = allFiles;
     if (filters.kind !== "all") r = r.filter((f) => f.kind === filters.kind);
     r = fuzzyFilter(r, q, (f) => f.name);

@@ -24,17 +24,19 @@ export function CommandPalette({ open, onClose, onRun }: PaletteProps) {
   }, [open]);
 
   const filtered = useMemo(() => {
+    if (!open) return COMMANDS;
     return fuzzyFilter(COMMANDS, q, (c) => `${c.name} ${c.group}`);
-  }, [q]);
+  }, [q, open]);
 
   const grouped = useMemo(() => {
+    if (!open) return {};
     const map: Record<string, Command[]> = {};
     filtered.forEach((c) => {
       if (!map[c.group]) map[c.group] = [];
       map[c.group].push(c);
     });
     return map;
-  }, [filtered]);
+  }, [filtered, open]);
 
   const selectedRef = useCallback((node: HTMLDivElement | null) => {
     node?.scrollIntoView({ block: "nearest" });
