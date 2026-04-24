@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from "react";
+import { useEffect, useRef } from "react";
 import { buildColumnsFromSelection } from "@/components/Columns";
 import type { FileNode } from "@/types";
 
@@ -20,25 +20,31 @@ interface KeyboardNavOptions {
   onDismissOverlays: () => void;
 }
 
-export function useKeyboardNav({
-  tree,
-  selection,
-  focusedCol,
-  setFocusedCol,
-  navigateTo,
-  goBack,
-  goFwd,
-  overlaysOpen,
-  onTogglePalette,
-  onToggleFolderPalette,
-  onToggleSearch,
-  onToggleSettings,
-  onToggleCheatsheet,
-  onToast,
-  onDismissOverlays,
-}: KeyboardNavOptions) {
-  const handler = useCallback(
-    (e: KeyboardEvent) => {
+export function useKeyboardNav(opts: KeyboardNavOptions) {
+  // Store all options in a ref so the event handler is stable (never recreated)
+  const ref = useRef(opts);
+  ref.current = opts;
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const {
+        tree,
+        selection,
+        focusedCol,
+        setFocusedCol,
+        navigateTo,
+        goBack,
+        goFwd,
+        overlaysOpen,
+        onTogglePalette,
+        onToggleFolderPalette,
+        onToggleSearch,
+        onToggleSettings,
+        onToggleCheatsheet,
+        onToast,
+        onDismissOverlays,
+      } = ref.current;
+
       const target = e.target as HTMLElement;
       if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") {
         if (e.key === "Escape") (target as HTMLInputElement).blur();
@@ -47,7 +53,6 @@ export function useKeyboardNav({
 
       const meta = e.metaKey || e.ctrlKey;
 
-      // Global shortcuts (work even with overlays)
       if (meta && e.key.toLowerCase() === "k") { e.preventDefault(); onTogglePalette(); return; }
       if (meta && e.key.toLowerCase() === "p") { e.preventDefault(); onToggleFolderPalette(); return; }
       if (meta && e.key.toLowerCase() === "f") { e.preventDefault(); onToggleSearch(); return; }
@@ -59,10 +64,8 @@ export function useKeyboardNav({
         return;
       }
 
-      // Don't navigate if overlay is open
       if (overlaysOpen) return;
 
-      // History navigation
       if (meta && e.key === "[") { e.preventDefault(); goBack(); return; }
       if (meta && e.key === "]") { e.preventDefault(); goFwd(); return; }
 
@@ -71,7 +74,6 @@ export function useKeyboardNav({
       const currentSelectedId = selection[focusedCol + 1];
       const currentIdx = currentItems.findIndex((it) => it.id === currentSelectedId);
 
-      // Arrow / hjkl navigation
       if (e.key === "ArrowDown" || e.key === "j") {
         e.preventDefault();
         if (currentItems.length === 0) return;
@@ -110,28 +112,9 @@ export function useKeyboardNav({
         e.preventDefault();
         onToast("Moved to Trash");
       }
-    },
-    [
-      tree,
-      selection,
-      focusedCol,
-      navigateTo,
-      goBack,
-      goFwd,
-      overlaysOpen,
-      onTogglePalette,
-      onToggleFolderPalette,
-      onToggleSearch,
-      onToggleSettings,
-      onToggleCheatsheet,
-      onToast,
-      onDismissOverlays,
-      setFocusedCol,
-    ],
-  );
+    };
 
-  useEffect(() => {
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [handler]);
+  }, []); // Empty deps — handler is stable, reads from ref
 }
