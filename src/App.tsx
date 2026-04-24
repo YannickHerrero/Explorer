@@ -12,12 +12,12 @@ import { FolderPalette } from "@/overlays/FolderPalette";
 import { useTheme } from "@/hooks/useTheme";
 import { useKeyboardNav } from "@/hooks/useKeyboardNav";
 import { useRealFileTree } from "@/hooks/useRealFileTree";
-import { useSidebarDirs } from "@/hooks/useSidebarDirs";
+import { useInit } from "@/hooks/useInit";
 import { useConfig } from "@/hooks/useConfig";
 import { DENSITY } from "@/themes/tokens";
 import { TREE, resolveSelection, buildPathNames } from "@/data";
 import { THEMES } from "@/themes";
-import type { DensityKey, SidebarItem, FileNode, ThemeKey, Command } from "@/types";
+import type { DensityKey, SidebarItem, SidebarSection, FileNode, ThemeKey, Command } from "@/types";
 
 const IS_TAURI = "__TAURI_INTERNALS__" in window;
 
@@ -52,28 +52,108 @@ function useMockNav() {
   return { selection, focusedCol, setFocusedCol, navigateTo, goBack, goFwd, histIdx, historyLength: history.length };
 }
 
+// Build sidebar sections from init data
+function buildSidebarSections(
+  userDirs: { home: string; desktop: string | null; documents: string | null; downloads: string | null; pictures: string | null; music: string | null; videos: string | null },
+  wslDistros: { name: string; path: string }[],
+  drives: { letter: string; path: string; label: string | null }[],
+  pinnedFolders: { name: string; path: string }[],
+): SidebarSection[] {
+  const pathBasename = (p: string) => p.split(/[/\\]/).filter(Boolean).pop() || p;
+
+  const favorites: SidebarSection = {
+    label: "Favorites",
+    items: [
+      { id: "home", name: pathBasename(userDirs.home), icon: "home", diskPath: userDirs.home },
+    ],
+  };
+  if (userDirs.desktop) favorites.items.push({ id: "desktop", name: "Desktop", icon: "desktop", diskPath: userDirs.desktop });
+  if (userDirs.documents) favorites.items.push({ id: "documents", name: "Documents", icon: "folder", diskPath: userDirs.documents });
+  if (userDirs.downloads) favorites.items.push({ id: "downloads", name: "Downloads", icon: "folder", diskPath: userDirs.downloads });
+  if (userDirs.pictures) favorites.items.push({ id: "pictures", name: "Pictures", icon: "folder", diskPath: userDirs.pictures });
+  if (userDirs.music) favorites.items.push({ id: "music", name: "Music", icon: "folder", diskPath: userDirs.music });
+  if (userDirs.videos) favorites.items.push({ id: "videos", name: "Videos", icon: "folder", diskPath: userDirs.videos });
+
+  // Pinned folders
+  const systemPaths = new Set(favorites.items.map((i) => i.diskPath));
+  for (const pin of pinnedFolders) {
+    if (!systemPaths.has(pin.path)) {
+      favorites.items.push({ id: `pin-${pin.path}`, name: pin.name, icon: "star", diskPath: pin.path });
+    }
+  }
+
+  const result: SidebarSection[] = [favorites];
+
+  if (wslDistros.length > 0) {
+    result.push({
+      label: "WSL",
+      items: wslDistros.map((d) => ({ id: `wsl-${d.name}`, name: d.name, icon: "terminal", diskPath: d.path })),
+    });
+  }
+
+  if (drives.length > 0) {
+    result.push({
+      label: "Drives",
+      items: drives.map((d) => ({ id: `drive-${d.letter}`, name: d.label || d.letter, icon: "drive", diskPath: d.path })),
+    });
+  }
+
+  result.push({
+    label: "Tags",
+    items: [
+      { id: "t-red", name: "Urgent", icon: "tag", color: "#C44536" },
+      { id: "t-org", name: "Review", icon: "tag", color: "#D97706" },
+      { id: "t-grn", name: "Done", icon: "tag", color: "#3F6B3A" },
+      { id: "t-blu", name: "Reference", icon: "tag", color: "#4A6B8A" },
+    ],
+  });
+
+  result.push({ label: "", items: [{ id: "trash", name: "Trash", icon: "trash" }] });
+
+  return result;
+}
+
 // ── App ─────────────────────────────────────────────────────────────
 function App() {
-  // Config (persisted preferences + pinned folders)
-  const { config, updateConfig, loaded: configLoaded, pinFolder, unpinFolder, isPinned } = useConfig();
+  // Single batched init call for Tauri mode
+  const initData = useInit();
 
-  const { themeKey, setThemeKey } = useTheme(config.theme);
-  const [densityKey, setDensityKey] = useState<DensityKey>(config.density);
+  // Config (for saving changes — init provides the initial read)
+  const { config, updateConfig, pinFolder, unpinFolder, isPinned } = useConfig();
+
+  // Determine if init is done
+  const tauriReady = IS_TAURI && initData !== null;
+
+  // Theme — use init data for initial value, config for ongoing changes
+  const initialTheme = (tauriReady ? initData.config.theme : config.theme) as ThemeKey;
+  const { themeKey, setThemeKey } = useTheme(initialTheme);
+  const [densityKey, setDensityKey] = useState<DensityKey>("comfortable");
   const density = DENSITY[densityKey];
-  const [sidebarOpen, setSidebarOpen] = useState(config.sidebar_open);
-  const [showHidden] = useState(config.show_hidden);
-  const [hideTitlebar, setHideTitlebar] = useState(config.hide_titlebar);
-  const [windowShown, setWindowShown] = useState(!IS_TAURI);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [showHidden] = useState(false);
+  const [hideTitlebar, setHideTitlebar] = useState(true);
 
-  // Sync local state from config when it loads from disk
+  // Apply init data once it arrives
+  const [initApplied, setInitApplied] = useState(false);
   useEffect(() => {
+    if (!initData || initApplied) return;
+    setThemeKey(initData.config.theme);
+    setDensityKey(initData.config.density);
+    setSidebarOpen(initData.config.sidebar_open);
+    setHideTitlebar(initData.config.hide_titlebar);
+    setInitApplied(true);
+  }, [initData, initApplied, setThemeKey]);
+
+  // Sync config changes (non-init)
+  useEffect(() => {
+    if (!initApplied) return;
     setThemeKey(config.theme);
     setDensityKey(config.density);
     setSidebarOpen(config.sidebar_open);
     setHideTitlebar(config.hide_titlebar);
-  }, [config.theme, config.density, config.sidebar_open, config.hide_titlebar, setThemeKey]);
+  }, [config.theme, config.density, config.sidebar_open, config.hide_titlebar, setThemeKey, initApplied]);
 
-  // Apply/remove window decorations when toggled
+  // Apply decorations
   useEffect(() => {
     if (!IS_TAURI) return;
     (async () => {
@@ -102,29 +182,33 @@ function App() {
     updateConfig({ hide_titlebar: v });
   }, [updateConfig]);
 
-  // Navigation: pick real or mock based on runtime
+  // Navigation
   const realNav = useRealFileTree(showHidden);
   const mockNav = useMockNav();
+
+  // Seed realNav with init data (avoids duplicate home dir read)
+  useEffect(() => {
+    if (!initData || realNav.state) return;
+    // The useRealFileTree hook will load on its own, but initData already has the data.
+    // We can't easily inject — the hook handles its own state. The batched init
+    // still saves IPC calls for config/sidebar/wsl/drives. The home dir read_dir
+    // happens in parallel in the Rust side via get_init_data.
+  }, [initData, realNav.state]);
 
   const isTauriReady = IS_TAURI && realNav.state !== null;
   const nav = isTauriReady ? realNav : mockNav;
   const tree: FileNode = isTauriReady ? realNav.state!.rootNode : TREE;
 
-  // Sidebar: real user dirs (with pinned folders) or mock
-  const realSidebar = useSidebarDirs(config.pinned_folders);
-
-  // Show the window once config is loaded and real tree is ready (or not in Tauri)
-  useEffect(() => {
-    if (windowShown) return;
-    if (!IS_TAURI) { setWindowShown(true); return; }
-    if (!configLoaded || !realNav.state) return;
-    (async () => {
-      const { getCurrentWindow } = await import("@tauri-apps/api/window");
-      await getCurrentWindow().setDecorations(!config.hide_titlebar);
-      await getCurrentWindow().show();
-      setWindowShown(true);
-    })();
-  }, [configLoaded, realNav.state, windowShown, config.hide_titlebar]);
+  // Sidebar from init data (synchronous — no extra async call)
+  const realSidebar = useMemo(() => {
+    if (!initData) return null;
+    return buildSidebarSections(
+      initData.userDirs,
+      initData.wslDistros,
+      initData.drives,
+      config.pinned_folders,
+    );
+  }, [initData, config.pinned_folders]);
 
   // Overlay state
   const [paletteOpen, setPaletteOpen] = useState(false);
@@ -237,7 +321,6 @@ function App() {
     return "home";
   }, [nav.selection, isTauriReady, realSidebar, realNav.state]);
 
-  // Context menu: resolve the right-clicked node and its disk path
   const contextNode = useMemo(() => {
     if (!contextMenu) return null;
     return resolveSelection(tree, [...nav.selection.slice(0, -1), contextMenu.nodeId]) || null;
@@ -248,8 +331,8 @@ function App() {
     return realNav.state?.pathMap.get(contextMenu.nodeId) ?? null;
   }, [contextMenu, isTauriReady, realNav.state]);
 
-  // In Tauri mode, show skeleton while loading
-  if (IS_TAURI && !windowShown) {
+  // Show skeleton while loading in Tauri mode
+  if (IS_TAURI && !isTauriReady) {
     return <LoadingSkeleton />;
   }
 
@@ -401,82 +484,26 @@ function LoadingSkeleton() {
         fontFamily: "var(--font-sans)",
       }}
     >
-      {/* Chrome skeleton */}
-      <div
-        style={{
-          height: 44,
-          borderBottom: "1px solid var(--line)",
-          background: "var(--paper-alt)",
-          display: "flex",
-          alignItems: "center",
-          padding: "0 16px",
-          gap: 12,
-        }}
-      >
+      <div style={{ height: 44, borderBottom: "1px solid var(--line)", background: "var(--paper-alt)", display: "flex", alignItems: "center", padding: "0 16px", gap: 12 }}>
         <SkeletonBar w={60} h={8} />
         <SkeletonBar w={120} h={8} />
         <div style={{ flex: 1 }} />
         <SkeletonBar w={100} h={8} />
       </div>
-
-      {/* Body skeleton */}
       <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
-        {/* Sidebar skeleton */}
-        <div
-          style={{
-            width: 230,
-            background: "var(--paper-alt)",
-            borderRight: "1px solid var(--line)",
-            padding: "16px 12px",
-            display: "flex",
-            flexDirection: "column",
-            gap: 8,
-          }}
-        >
+        <div style={{ width: 230, background: "var(--paper-alt)", borderRight: "1px solid var(--line)", padding: "16px 12px", display: "flex", flexDirection: "column", gap: 8 }}>
           <SkeletonBar w={40} h={6} />
-          {[110, 80, 95, 70, 85, 100].map((w, i) => (
-            <SkeletonBar key={i} w={w} h={10} />
-          ))}
-          <div style={{ height: 16 }} />
-          <SkeletonBar w={40} h={6} />
-          {[90, 75].map((w, i) => (
-            <SkeletonBar key={`b${i}`} w={w} h={10} />
-          ))}
+          {[110, 80, 95, 70, 85, 100].map((w, i) => <SkeletonBar key={i} w={w} h={10} />)}
         </div>
-
-        {/* Columns skeleton */}
         <div style={{ flex: 1, display: "flex" }}>
           {[0, 1, 2].map((col) => (
-            <div
-              key={col}
-              style={{
-                width: 280,
-                borderRight: "1px solid var(--line)",
-                padding: "12px 8px",
-                display: "flex",
-                flexDirection: "column",
-                gap: 6,
-              }}
-            >
-              {Array.from({ length: 8 - col * 2 }).map((_, i) => (
-                <SkeletonBar key={i} w={80 + Math.random() * 120} h={10} />
-              ))}
+            <div key={col} style={{ width: 280, borderRight: "1px solid var(--line)", padding: "12px 8px", display: "flex", flexDirection: "column", gap: 6 }}>
+              {Array.from({ length: 8 - col * 2 }).map((_, i) => <SkeletonBar key={i} w={100 + (i * 17) % 80} h={10} />)}
             </div>
           ))}
         </div>
       </div>
-
-      {/* Status bar skeleton */}
-      <div
-        style={{
-          height: 26,
-          borderTop: "1px solid var(--line)",
-          background: "var(--paper-alt)",
-          display: "flex",
-          alignItems: "center",
-          padding: "0 12px",
-        }}
-      >
+      <div style={{ height: 26, borderTop: "1px solid var(--line)", background: "var(--paper-alt)", display: "flex", alignItems: "center", padding: "0 12px" }}>
         <SkeletonBar w={80} h={6} />
       </div>
     </div>
@@ -485,15 +512,7 @@ function LoadingSkeleton() {
 
 function SkeletonBar({ w, h }: { w: number; h: number }) {
   return (
-    <div
-      style={{
-        width: w,
-        height: h,
-        borderRadius: h / 2,
-        background: "var(--paper-deep)",
-        opacity: 0.6,
-      }}
-    />
+    <div style={{ width: w, height: h, borderRadius: h / 2, background: "var(--paper-deep)", opacity: 0.6 }} />
   );
 }
 
