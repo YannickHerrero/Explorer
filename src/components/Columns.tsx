@@ -195,7 +195,7 @@ function FileRow({
         borderRadius: 4,
         background: selBg,
         color: selFg,
-        cursor: "default",
+        cursor: "pointer",
         fontFamily: "var(--font-sans)",
         fontSize: density.fontBody,
         userSelect: "none",
