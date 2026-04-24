@@ -164,7 +164,6 @@ function FilePreview({ node }: { node: FileNode }) {
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
         <PreviewBtn icon="eye" label="Quick Look" kbd={["Space"]} />
         <PreviewBtn icon="folder-open" label="Open" kbd={["Ctrl", "Enter"]} />
-        <PreviewBtn icon="share" label="Share" />
       </div>
     </>
   );
