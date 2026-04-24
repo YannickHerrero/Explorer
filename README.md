@@ -4,6 +4,10 @@ A modern, keyboard-driven file explorer built with Tauri v2, React, and TypeScri
 
 ![Explorer Demo](explorer-demo.png)
 
+## Installation
+
+Download the latest Windows installer from the [Releases](https://github.com/YannickHerrero/Explorer/releases/latest) page and run `Explorer_x64-setup.exe`.
+
 ## Features
 
 - **Column view** - macOS Finder-style column navigation
