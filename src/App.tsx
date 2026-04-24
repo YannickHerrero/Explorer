@@ -55,7 +55,7 @@ function useMockNav() {
 // ── App ─────────────────────────────────────────────────────────────
 function App() {
   // Config (persisted preferences + pinned folders)
-  const { config, updateConfig, pinFolder, unpinFolder, isPinned } = useConfig();
+  const { config, updateConfig, loaded: configLoaded, pinFolder, unpinFolder, isPinned } = useConfig();
 
   const { themeKey, setThemeKey } = useTheme(config.theme);
   const [densityKey, setDensityKey] = useState<DensityKey>(config.density);
@@ -63,6 +63,7 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(config.sidebar_open);
   const [showHidden] = useState(config.show_hidden);
   const [hideTitlebar, setHideTitlebar] = useState(config.hide_titlebar);
+  const [windowShown, setWindowShown] = useState(!IS_TAURI);
 
   // Sync local state from config when it loads from disk
   useEffect(() => {
@@ -111,6 +112,19 @@ function App() {
 
   // Sidebar: real user dirs (with pinned folders) or mock
   const realSidebar = useSidebarDirs(config.pinned_folders);
+
+  // Show the window once config is loaded and real tree is ready (or not in Tauri)
+  useEffect(() => {
+    if (windowShown) return;
+    if (!IS_TAURI) { setWindowShown(true); return; }
+    if (!configLoaded || !realNav.state) return;
+    (async () => {
+      const { getCurrentWindow } = await import("@tauri-apps/api/window");
+      await getCurrentWindow().setDecorations(!config.hide_titlebar);
+      await getCurrentWindow().show();
+      setWindowShown(true);
+    })();
+  }, [configLoaded, realNav.state, windowShown, config.hide_titlebar]);
 
   // Overlay state
   const [paletteOpen, setPaletteOpen] = useState(false);
@@ -233,6 +247,11 @@ function App() {
     if (!contextMenu || !isTauriReady) return null;
     return realNav.state?.pathMap.get(contextMenu.nodeId) ?? null;
   }, [contextMenu, isTauriReady, realNav.state]);
+
+  // In Tauri mode, show skeleton while loading
+  if (IS_TAURI && !windowShown) {
+    return <LoadingSkeleton />;
+  }
 
   return (
     <div
@@ -367,6 +386,114 @@ function App() {
           </div>
         )}
     </div>
+  );
+}
+
+function LoadingSkeleton() {
+  return (
+    <div
+      style={{
+        width: "100%",
+        height: "100%",
+        background: "var(--paper)",
+        display: "flex",
+        flexDirection: "column",
+        fontFamily: "var(--font-sans)",
+      }}
+    >
+      {/* Chrome skeleton */}
+      <div
+        style={{
+          height: 44,
+          borderBottom: "1px solid var(--line)",
+          background: "var(--paper-alt)",
+          display: "flex",
+          alignItems: "center",
+          padding: "0 16px",
+          gap: 12,
+        }}
+      >
+        <SkeletonBar w={60} h={8} />
+        <SkeletonBar w={120} h={8} />
+        <div style={{ flex: 1 }} />
+        <SkeletonBar w={100} h={8} />
+      </div>
+
+      {/* Body skeleton */}
+      <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
+        {/* Sidebar skeleton */}
+        <div
+          style={{
+            width: 230,
+            background: "var(--paper-alt)",
+            borderRight: "1px solid var(--line)",
+            padding: "16px 12px",
+            display: "flex",
+            flexDirection: "column",
+            gap: 8,
+          }}
+        >
+          <SkeletonBar w={40} h={6} />
+          {[110, 80, 95, 70, 85, 100].map((w, i) => (
+            <SkeletonBar key={i} w={w} h={10} />
+          ))}
+          <div style={{ height: 16 }} />
+          <SkeletonBar w={40} h={6} />
+          {[90, 75].map((w, i) => (
+            <SkeletonBar key={`b${i}`} w={w} h={10} />
+          ))}
+        </div>
+
+        {/* Columns skeleton */}
+        <div style={{ flex: 1, display: "flex" }}>
+          {[0, 1, 2].map((col) => (
+            <div
+              key={col}
+              style={{
+                width: 280,
+                borderRight: "1px solid var(--line)",
+                padding: "12px 8px",
+                display: "flex",
+                flexDirection: "column",
+                gap: 6,
+              }}
+            >
+              {Array.from({ length: 8 - col * 2 }).map((_, i) => (
+                <SkeletonBar key={i} w={80 + Math.random() * 120} h={10} />
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Status bar skeleton */}
+      <div
+        style={{
+          height: 26,
+          borderTop: "1px solid var(--line)",
+          background: "var(--paper-alt)",
+          display: "flex",
+          alignItems: "center",
+          padding: "0 12px",
+        }}
+      >
+        <SkeletonBar w={80} h={6} />
+      </div>
+    </div>
+  );
+}
+
+function SkeletonBar({ w, h }: { w: number; h: number }) {
+  return (
+    <div
+      style={{
+        width: w,
+        height: h,
+        borderRadius: h / 2,
+        background: "var(--paper-deep)",
+        opacity: 0.6,
+      }}
+    />
   );
 }
 
