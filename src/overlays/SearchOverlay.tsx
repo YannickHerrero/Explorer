@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { Icon, kindIcon, Kbd } from "@/icons/Icon";
+import { fuzzyFilter } from "@/utils/fuzzy";
 import { TREE } from "@/data";
 import type { FileNode } from "@/types";
 
@@ -43,10 +44,9 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
   }, []);
 
   const results = useMemo(() => {
-    const ql = q.trim().toLowerCase();
     let r = allFiles;
-    if (ql) r = r.filter((f) => f.name.toLowerCase().includes(ql));
     if (filters.kind !== "all") r = r.filter((f) => f.kind === filters.kind);
+    r = fuzzyFilter(r, q, (f) => f.name);
     return r.slice(0, 40);
   }, [q, filters, allFiles]);
 
@@ -234,24 +234,41 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
 
 function Highlight({ text, q }: { text: string; q: string }) {
   if (!q) return <>{text}</>;
-  const i = text.toLowerCase().indexOf(q.toLowerCase());
-  if (i < 0) return <>{text}</>;
-  return (
-    <>
-      {text.slice(0, i)}
+  const tl = text.toLowerCase();
+  const ql = q.toLowerCase();
+
+  // Find fuzzy-matched character positions
+  const matched: number[] = [];
+  let qi = 0;
+  for (let ti = 0; ti < tl.length && qi < ql.length; ti++) {
+    if (tl[ti] === ql[qi]) {
+      matched.push(ti);
+      qi++;
+    }
+  }
+  if (matched.length === 0) return <>{text}</>;
+
+  const parts: React.ReactNode[] = [];
+  let last = 0;
+  for (const idx of matched) {
+    if (idx > last) parts.push(text.slice(last, idx));
+    parts.push(
       <mark
+        key={idx}
         style={{
           background: "var(--accent-soft)",
           color: "var(--paper)",
-          padding: "0 2px",
+          padding: "0 1px",
           borderRadius: 2,
         }}
       >
-        {text.slice(i, i + q.length)}
-      </mark>
-      {text.slice(i + q.length)}
-    </>
-  );
+        {text[idx]}
+      </mark>,
+    );
+    last = idx + 1;
+  }
+  if (last < text.length) parts.push(text.slice(last));
+  return <>{parts}</>;
 }
 
 function FilterChip({
