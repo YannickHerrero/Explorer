@@ -15,6 +15,7 @@
     "core:window:allow-close",
     "core:window:allow-show",
     "core:app:allow-version",
-    "updater:default"
+    "updater:default",
+    "process:allow-restart"
   ]
 }

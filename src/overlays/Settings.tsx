@@ -24,6 +24,9 @@ interface SettingsProps {
   onAddTag?: (tag: TagDef) => void;
   onRemoveTag?: (tagId: string) => void;
   onUpdateTag?: (tagId: string, updates: Partial<TagDef>) => void;
+  updateAvailable?: { version: string; body?: string } | null;
+  updateProgress?: string | null;
+  onUpdate?: () => void;
 }
 
 export function Settings({
@@ -41,6 +44,9 @@ export function Settings({
   onAddTag,
   onRemoveTag,
   onUpdateTag,
+  updateAvailable,
+  updateProgress,
+  onUpdate,
 }: SettingsProps) {
   const [activeTab, setActiveTab] = useState("General");
   const [version, setVersion] = useState("");
@@ -137,6 +143,43 @@ export function Settings({
             );
           })}
           <div style={{ flex: 1 }} />
+          {updateAvailable && !updateProgress && (
+            <button
+              onClick={onUpdate}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                margin: "0 6px 8px",
+                padding: "6px 10px",
+                borderRadius: 5,
+                border: "1px solid var(--accent)",
+                background: "var(--accent)",
+                color: "var(--paper)",
+                fontFamily: "var(--font-sans)",
+                fontSize: 11.5,
+                fontWeight: 500,
+                cursor: "pointer",
+              }}
+            >
+              Update to v{updateAvailable.version}
+            </button>
+          )}
+          {updateProgress && (
+            <div
+              style={{
+                margin: "0 6px 8px",
+                padding: "6px 10px",
+                borderRadius: 5,
+                background: "var(--paper-deep)",
+                fontFamily: "var(--font-sans)",
+                fontSize: 11,
+                color: "var(--ink-soft)",
+              }}
+            >
+              {updateProgress}
+            </div>
+          )}
           <div
             style={{
               padding: "10px 10px 0",

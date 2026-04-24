@@ -26,6 +26,7 @@ chrono = { version = "0.4", features = ["serde"] }
 dirs = "6"
 trash = "5"
 tauri-plugin-updater = "2"
+tauri-plugin-process = "2"
 arboard = "3"
 image = { version = "0.25", default-features = false, features = ["png", "jpeg", "gif", "bmp", "webp"] }
 

@@ -223,6 +223,54 @@ function App() {
   const [toast, setToast] = useState<string | null>(null);
   const [clipboard, setClipboard] = useState<{ path: string; name: string; mode: "copy" | "cut" } | null>(null);
   const [tagPickerOpen, setTagPickerOpen] = useState(false);
+  const [updateAvailable, setUpdateAvailable] = useState<{ version: string; body?: string } | null>(null);
+  const [updateProgress, setUpdateProgress] = useState<string | null>(null);
+
+  // Check for updates on startup
+  useEffect(() => {
+    if (!IS_TAURI) return;
+    const timer = setTimeout(async () => {
+      try {
+        const { check } = await import("@tauri-apps/plugin-updater");
+        const update = await check();
+        if (update) {
+          setUpdateAvailable({ version: update.version, body: update.body ?? undefined });
+        }
+      } catch {
+        // Silently ignore update check failures
+      }
+    }, 3000); // Delay 3s after startup
+    return () => clearTimeout(timer);
+  }, []);
+
+  const handleUpdate = useCallback(async () => {
+    try {
+      setUpdateProgress("Checking...");
+      const { check } = await import("@tauri-apps/plugin-updater");
+      const update = await check();
+      if (!update) {
+        setUpdateProgress(null);
+        setUpdateAvailable(null);
+        return;
+      }
+      setUpdateProgress("Downloading...");
+      await update.downloadAndInstall((event) => {
+        if (event.event === "Started" && event.data.contentLength) {
+          setUpdateProgress(`Downloading... 0%`);
+        } else if (event.event === "Progress") {
+          setUpdateProgress(`Downloading...`);
+        } else if (event.event === "Finished") {
+          setUpdateProgress("Installing...");
+        }
+      });
+      // Relaunch after install
+      const { relaunch } = await import("@tauri-apps/plugin-process");
+      await relaunch();
+    } catch (err) {
+      setUpdateProgress(null);
+      setUpdateAvailable(null);
+    }
+  }, []);
 
   const showToast = useCallback((msg: string) => {
     setToast(msg);
@@ -570,6 +618,9 @@ function App() {
           onAddTag={addTag}
           onRemoveTag={removeTag}
           onUpdateTag={updateTag}
+          updateAvailable={updateAvailable}
+          updateProgress={updateProgress}
+          onUpdate={handleUpdate}
         />
         <Cheatsheet open={cheatsheetOpen} onClose={() => setCheatsheetOpen(false)} />
 
