@@ -13,6 +13,7 @@ interface AppConfig {
   sidebar_open: boolean;
   show_hidden: boolean;
   vim_navigation: boolean;
+  hide_titlebar: boolean;
   last_path: string | null;
   pinned_folders: PinnedFolder[];
 }
@@ -23,6 +24,7 @@ const DEFAULT_CONFIG: AppConfig = {
   sidebar_open: true,
   show_hidden: false,
   vim_navigation: true,
+  hide_titlebar: false,
   last_path: null,
   pinned_folders: [],
 };
