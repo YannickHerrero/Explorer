@@ -19,19 +19,14 @@ function rawToFileNode(entry: RawFileEntry): FileNode {
     kind: entry.kind as FileNode["kind"],
     size: entry.size ?? undefined,
     modified: entry.modified ?? undefined,
-    // Mark folders as having children (to be loaded lazily)
     children: entry.is_dir ? [] : undefined,
   };
 }
 
 export interface RealTreeState {
-  /** The root path on disk (e.g. "C:\Users\maya" or "/home/maya") */
   rootPath: string;
-  /** The root node (name = folder name of rootPath) */
   rootNode: FileNode;
-  /** Maps node id -> absolute path on disk */
   pathMap: Map<string, string>;
-  /** Maps node id -> loaded children (so we don't re-fetch) */
   loadedDirs: Map<string, FileNode[]>;
 }
 
@@ -39,6 +34,8 @@ export function useRealFileTree(showHidden: boolean) {
   const [state, setState] = useState<RealTreeState | null>(null);
   const [selection, setSelection] = useState<string[]>([]);
   const [focusedCol, setFocusedCol] = useState(0);
+  const [history, setHistory] = useState<string[][]>([]);
+  const [histIdx, setHistIdx] = useState(-1);
   const loadingRef = useRef<Set<string>>(new Set());
 
   // Initialize: load home directory
@@ -66,8 +63,7 @@ export function useRealFileTree(showHidden: boolean) {
         const pathMap = new Map<string, string>();
         pathMap.set("root", homePath);
         for (const entry of entries) {
-          const node = rawToFileNode(entry);
-          pathMap.set(node.id, entry.path);
+          pathMap.set(rawToFileNode(entry).id, entry.path);
         }
 
         const loadedDirs = new Map<string, FileNode[]>();
@@ -75,13 +71,11 @@ export function useRealFileTree(showHidden: boolean) {
 
         setState({ rootPath: homePath, rootNode, pathMap, loadedDirs });
 
-        // Auto-select first child
-        if (children.length > 0) {
-          setSelection(["root", children[0].id]);
-          setFocusedCol(0);
-        } else {
-          setSelection(["root"]);
-        }
+        const initialSel = children.length > 0 ? ["root", children[0].id] : ["root"];
+        setSelection(initialSel);
+        setFocusedCol(0);
+        setHistory([initialSel]);
+        setHistIdx(0);
       } catch (e) {
         console.error("Failed to load home directory:", e);
       }
@@ -117,7 +111,6 @@ export function useRealFileTree(showHidden: boolean) {
           const newLoadedDirs = new Map(prev.loadedDirs);
           newLoadedDirs.set(nodeId, children);
 
-          // Update the tree: find and update the node's children
           const newRoot = updateNodeChildren(prev.rootNode, nodeId, children);
 
           return {
@@ -152,15 +145,29 @@ export function useRealFileTree(showHidden: boolean) {
     (newSel: string[], focused?: number) => {
       setSelection(newSel);
       if (focused !== undefined) setFocusedCol(focused);
+      setHistory((h) => [...h.slice(0, histIdx + 1), newSel]);
+      setHistIdx((i) => i + 1);
     },
-    [],
+    [histIdx],
   );
+
+  const goBack = useCallback(() => {
+    if (histIdx > 0) {
+      setHistIdx((i) => i - 1);
+      setSelection(history[histIdx - 1]);
+    }
+  }, [histIdx, history]);
+
+  const goFwd = useCallback(() => {
+    if (histIdx < history.length - 1) {
+      setHistIdx((i) => i + 1);
+      setSelection(history[histIdx + 1]);
+    }
+  }, [histIdx, history]);
 
   // Navigate to an absolute path (e.g. from sidebar)
   const navigateToPath = useCallback(
     async (absolutePath: string) => {
-      if (!state) return;
-
       try {
         const entries = await invoke<RawFileEntry[]>("read_dir", {
           path: absolutePath,
@@ -169,7 +176,6 @@ export function useRealFileTree(showHidden: boolean) {
         const children = entries.map(rawToFileNode);
         const folderName = absolutePath.split(/[/\\]/).filter(Boolean).pop() || "Root";
 
-        // We create a fresh root at this path
         const rootNode: FileNode = {
           id: "root",
           name: folderName,
@@ -187,32 +193,34 @@ export function useRealFileTree(showHidden: boolean) {
         loadedDirs.set("root", children);
 
         setState({ rootPath: absolutePath, rootNode, pathMap, loadedDirs });
-        if (children.length > 0) {
-          setSelection(["root", children[0].id]);
-          setFocusedCol(0);
-        } else {
-          setSelection(["root"]);
-        }
+
+        const newSel = children.length > 0 ? ["root", children[0].id] : ["root"];
+        setSelection(newSel);
+        setFocusedCol(0);
+        setHistory((h) => [...h.slice(0, histIdx + 1), newSel]);
+        setHistIdx((i) => i + 1);
       } catch (e) {
         console.error("Failed to navigate to path:", e);
       }
     },
-    [state, showHidden],
+    [showHidden, histIdx],
   );
 
   return {
     state,
     selection,
-    setSelection,
     focusedCol,
     setFocusedCol,
     navigateTo,
     navigateToPath,
+    goBack,
+    goFwd,
+    histIdx,
+    historyLength: history.length,
     loadDir,
   };
 }
 
-// Recursively update a node's children in an immutable tree
 function updateNodeChildren(node: FileNode, targetId: string, children: FileNode[]): FileNode {
   if (node.id === targetId) {
     return { ...node, children };
