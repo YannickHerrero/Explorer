@@ -8,6 +8,7 @@ use commands::init::get_init_data;
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .invoke_handler(tauri::generate_handler![
             read_dir,
             get_home_dir,
