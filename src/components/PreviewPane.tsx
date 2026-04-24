@@ -162,8 +162,8 @@ function FilePreview({ node }: { node: FileNode }) {
       <MetaList items={buildMeta(node)} />
 
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-        <PreviewBtn icon="eye" label="Quick Look" kbd={["\u2423"]} />
-        <PreviewBtn icon="folder-open" label="Open" kbd={["Ctrl", "\u21B5"]} />
+        <PreviewBtn icon="eye" label="Quick Look" kbd={["Space"]} />
+        <PreviewBtn icon="folder-open" label="Open" kbd={["Ctrl", "Enter"]} />
         <PreviewBtn icon="share" label="Share" />
       </div>
     </>

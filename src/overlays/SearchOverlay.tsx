@@ -221,9 +221,9 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
             color: "var(--muted)",
           }}
         >
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Kbd k="\u21B5" />open</span>
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Kbd k="Ctrl" /><Kbd k="\u21B5" />reveal</span>
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Kbd k="\u21E5" />filters</span>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Kbd k="Enter" />open</span>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Kbd k="Ctrl" /><Kbd k="Enter" />reveal</span>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Kbd k="Tab" />filters</span>
           <span style={{ flex: 1 }} />
           <span>{results.length} {results.length === 1 ? "match" : "matches"}</span>
         </div>

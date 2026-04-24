@@ -28,8 +28,8 @@ export function ContextMenu({ x, y, onClose, onRun, isFolder, isPinned, onToggle
 
   const sections: MenuItem[][] = [
     [
-      { id: "open", name: "Open", kbd: ["Ctrl", "\u21B5"], icon: "folder-open" },
-      { id: "ql", name: "Quick Look", kbd: ["\u2423"], icon: "eye" },
+      { id: "open", name: "Open", kbd: ["Ctrl", "Enter"], icon: "folder-open" },
+      { id: "ql", name: "Quick Look", kbd: ["Space"], icon: "eye" },
       { id: "term", name: "Open in Terminal", kbd: ["Ctrl", "'"], icon: "terminal" },
     ],
   ];
@@ -48,7 +48,7 @@ export function ContextMenu({ x, y, onClose, onRun, isFolder, isPinned, onToggle
   sections.push([
     { id: "mv", name: "Move to\u2026", kbd: ["Alt+Ctrl", "M"], icon: "move" },
     { id: "dup", name: "Duplicate", kbd: ["Ctrl", "D"], icon: "copy" },
-    { id: "ren", name: "Rename", kbd: ["\u21B5"], icon: "edit" },
+    { id: "ren", name: "Rename", kbd: ["Enter"], icon: "edit" },
     { id: "tag", name: "Add Tag", kbd: ["Ctrl", "T"], icon: "tag" },
   ]);
 
@@ -58,7 +58,7 @@ export function ContextMenu({ x, y, onClose, onRun, isFolder, isPinned, onToggle
   ]);
 
   sections.push([
-    { id: "trash", name: "Move to Trash", kbd: ["Ctrl", "\u232B"], icon: "trash", danger: true },
+    { id: "trash", name: "Move to Trash", kbd: ["Ctrl", "Del"], icon: "trash", danger: true },
   ]);
 
   const handleClick = (item: MenuItem) => {

@@ -211,9 +211,9 @@ export function CommandPalette({ open, onClose, onRun }: PaletteProps) {
             background: "var(--paper-deep)",
           }}
         >
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Kbd k="\u21B5" />run</span>
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Kbd k="\u2191" /><Kbd k="\u2193" />navigate</span>
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Kbd k="esc" />dismiss</span>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Kbd k="Enter" />run</span>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Kbd k="↑" /><Kbd k="↓" />navigate</span>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Kbd k="Esc" />dismiss</span>
           <span style={{ flex: 1 }} />
           <span>{filtered.length} {filtered.length === 1 ? "result" : "results"}</span>
         </div>
