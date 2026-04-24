@@ -1,4 +1,4 @@
-import { useEffect, useRef, memo } from "react";
+import { useEffect, useRef, useCallback, memo } from "react";
 import { Icon, kindIcon } from "@/icons/Icon";
 import { PreviewPane } from "@/components/PreviewPane";
 import { resolveSelection } from "@/data";
@@ -101,6 +101,10 @@ function Column({
   onFocus: () => void;
   width: number;
 }) {
+  const selectedRef = useCallback((node: HTMLDivElement | null) => {
+    node?.scrollIntoView({ block: "nearest" });
+  }, [selectedId]);
+
   return (
     <div
       onClick={onFocus}
@@ -136,6 +140,7 @@ function Column({
             onClick={() => onSelect(item.id)}
             onDoubleClick={() => onOpen(item)}
             density={density}
+            scrollRef={item.id === selectedId ? selectedRef : undefined}
           />
         ))
       )}
@@ -152,6 +157,7 @@ function FileRow({
   onClick,
   onDoubleClick,
   density,
+  scrollRef,
 }: {
   item: FileNode;
   selected: boolean;
@@ -159,6 +165,7 @@ function FileRow({
   onClick: () => void;
   onDoubleClick: () => void;
   density: DensityTokens;
+  scrollRef?: (node: HTMLDivElement | null) => void;
 }) {
   const isFolder = item.kind === "folder";
   const selBg = selected ? (columnFocused ? "var(--accent)" : "var(--paper-deep)") : "transparent";
@@ -167,6 +174,7 @@ function FileRow({
 
   return (
     <div
+      ref={scrollRef}
       onClick={onClick}
       onDoubleClick={onDoubleClick}
       className="file-row"
