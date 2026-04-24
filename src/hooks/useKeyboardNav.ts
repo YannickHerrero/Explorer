@@ -12,6 +12,7 @@ interface KeyboardNavOptions {
   goFwd: () => void;
   overlaysOpen: boolean;
   onTogglePalette: () => void;
+  onToggleFolderPalette: () => void;
   onToggleSearch: () => void;
   onToggleSettings: () => void;
   onToggleCheatsheet: () => void;
@@ -29,6 +30,7 @@ export function useKeyboardNav({
   goFwd,
   overlaysOpen,
   onTogglePalette,
+  onToggleFolderPalette,
   onToggleSearch,
   onToggleSettings,
   onToggleCheatsheet,
@@ -47,6 +49,7 @@ export function useKeyboardNav({
 
       // Global shortcuts (work even with overlays)
       if (meta && e.key.toLowerCase() === "k") { e.preventDefault(); onTogglePalette(); return; }
+      if (meta && e.key.toLowerCase() === "p") { e.preventDefault(); onToggleFolderPalette(); return; }
       if (meta && e.key.toLowerCase() === "f") { e.preventDefault(); onToggleSearch(); return; }
       if (meta && e.key === ",") { e.preventDefault(); onToggleSettings(); return; }
       if (meta && e.key === "/") { e.preventDefault(); onToggleCheatsheet(); return; }
@@ -117,6 +120,7 @@ export function useKeyboardNav({
       goFwd,
       overlaysOpen,
       onTogglePalette,
+      onToggleFolderPalette,
       onToggleSearch,
       onToggleSettings,
       onToggleCheatsheet,

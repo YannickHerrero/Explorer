@@ -8,6 +8,7 @@ import { SearchOverlay } from "@/overlays/SearchOverlay";
 import { Settings } from "@/overlays/Settings";
 import { Cheatsheet } from "@/overlays/Cheatsheet";
 import { ContextMenu } from "@/overlays/ContextMenu";
+import { FolderPalette } from "@/overlays/FolderPalette";
 import { useTheme } from "@/hooks/useTheme";
 import { useKeyboardNav } from "@/hooks/useKeyboardNav";
 import { useRealFileTree } from "@/hooks/useRealFileTree";
@@ -95,6 +96,7 @@ function App() {
 
   // Overlay state
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [folderPaletteOpen, setFolderPaletteOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [cheatsheetOpen, setCheatsheetOpen] = useState(false);
@@ -157,7 +159,7 @@ function App() {
     }
   };
 
-  const overlaysOpen = paletteOpen || searchOpen || settingsOpen || cheatsheetOpen;
+  const overlaysOpen = paletteOpen || folderPaletteOpen || searchOpen || settingsOpen || cheatsheetOpen;
 
   useKeyboardNav({
     tree,
@@ -169,12 +171,14 @@ function App() {
     goFwd: nav.goFwd,
     overlaysOpen,
     onTogglePalette: () => setPaletteOpen((v) => !v),
+    onToggleFolderPalette: () => setFolderPaletteOpen((v) => !v),
     onToggleSearch: () => setSearchOpen((v) => !v),
     onToggleSettings: () => setSettingsOpen((v) => !v),
     onToggleCheatsheet: () => setCheatsheetOpen((v) => !v),
     onToast: showToast,
     onDismissOverlays: () => {
       setPaletteOpen(false);
+      setFolderPaletteOpen(false);
       setSearchOpen(false);
       setSettingsOpen(false);
       setCheatsheetOpen(false);
@@ -277,6 +281,12 @@ function App() {
 
         {/* Overlays */}
         <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} onRun={runCommand} />
+        <FolderPalette
+          open={folderPaletteOpen}
+          onClose={() => setFolderPaletteOpen(false)}
+          onNavigate={handleSidebarNav}
+          sections={isTauriReady && realSidebar ? realSidebar : SIDEBAR_DATA}
+        />
         <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
         <Settings
           open={settingsOpen}
