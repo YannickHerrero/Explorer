@@ -16,6 +16,8 @@ pub struct AppConfig {
     pub sidebar_open: bool,
     pub show_hidden: bool,
     pub vim_navigation: bool,
+    #[serde(default)]
+    pub hide_titlebar: bool,
     pub last_path: Option<String>,
     #[serde(default)]
     pub pinned_folders: Vec<PinnedFolder>,
@@ -29,6 +31,7 @@ impl Default for AppConfig {
             sidebar_open: true,
             show_hidden: false,
             vim_navigation: true,
+            hide_titlebar: false,
             last_path: None,
             pinned_folders: Vec::new(),
         }
