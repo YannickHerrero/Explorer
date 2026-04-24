@@ -15,51 +15,67 @@ interface ContextMenuProps {
   onClose: () => void;
   onRun: (item: MenuItem) => void;
   isFolder?: boolean;
+  isSidebar?: boolean;
   isPinned?: boolean;
   onTogglePin?: () => void;
 }
 
-export function ContextMenu({ x, y, onClose, onRun, isFolder, isPinned, onTogglePin }: ContextMenuProps) {
+export function ContextMenu({ x, y, onClose, onRun, isFolder, isSidebar, isPinned, onTogglePin }: ContextMenuProps) {
   useEffect(() => {
     const handler = () => onClose();
     document.addEventListener("click", handler);
     return () => document.removeEventListener("click", handler);
   }, [onClose]);
 
-  const sections: MenuItem[][] = [
-    [
+  const sections: MenuItem[][] = [];
+
+  if (isSidebar) {
+    // Sidebar items get a simplified context menu
+    sections.push([
+      { id: "open", name: "Open", kbd: ["Ctrl", "Enter"], icon: "folder-open" },
+      { id: "term", name: "Open in Terminal", kbd: ["Ctrl", "'"], icon: "terminal" },
+    ]);
+    if (onTogglePin) {
+      sections.push([
+        {
+          id: "toggle-pin",
+          name: isPinned ? "Remove from Favorites" : "Add to Favorites",
+          icon: isPinned ? "minus" : "star",
+        },
+      ]);
+    }
+  } else {
+    sections.push([
       { id: "open", name: "Open", kbd: ["Ctrl", "Enter"], icon: "folder-open" },
       { id: "ql", name: "Quick Look", kbd: ["Space"], icon: "eye" },
       { id: "term", name: "Open in Terminal", kbd: ["Ctrl", "'"], icon: "terminal" },
-    ],
-  ];
+    ]);
 
-  // Pin/unpin for folders
-  if (isFolder && onTogglePin) {
+    if (isFolder && onTogglePin) {
+      sections.push([
+        {
+          id: "toggle-pin",
+          name: isPinned ? "Remove from Favorites" : "Add to Favorites",
+          icon: isPinned ? "minus" : "star",
+        },
+      ]);
+    }
+
     sections.push([
-      {
-        id: "toggle-pin",
-        name: isPinned ? "Remove from Favorites" : "Add to Favorites",
-        icon: isPinned ? "minus" : "star",
-      },
+      { id: "mv", name: "Move to...", kbd: ["Alt+Ctrl", "M"], icon: "move" },
+      { id: "dup", name: "Duplicate", kbd: ["Ctrl", "D"], icon: "copy" },
+      { id: "ren", name: "Rename", kbd: ["Enter"], icon: "edit" },
+      { id: "tag", name: "Add Tag", kbd: ["Ctrl", "T"], icon: "tag" },
+    ]);
+
+    sections.push([
+      { id: "cpy", name: "Copy", kbd: ["Ctrl", "C"], icon: "copy" },
+    ]);
+
+    sections.push([
+      { id: "trash", name: "Move to Trash", kbd: ["Ctrl", "Del"], icon: "trash", danger: true },
     ]);
   }
-
-  sections.push([
-    { id: "mv", name: "Move to...", kbd: ["Alt+Ctrl", "M"], icon: "move" },
-    { id: "dup", name: "Duplicate", kbd: ["Ctrl", "D"], icon: "copy" },
-    { id: "ren", name: "Rename", kbd: ["Enter"], icon: "edit" },
-    { id: "tag", name: "Add Tag", kbd: ["Ctrl", "T"], icon: "tag" },
-  ]);
-
-  sections.push([
-    { id: "cpy", name: "Copy", kbd: ["Ctrl", "C"], icon: "copy" },
-    { id: "share", name: "Share", icon: "share" },
-  ]);
-
-  sections.push([
-    { id: "trash", name: "Move to Trash", kbd: ["Ctrl", "Del"], icon: "trash", danger: true },
-  ]);
 
   const handleClick = (item: MenuItem) => {
     if (item.id === "toggle-pin" && onTogglePin) {

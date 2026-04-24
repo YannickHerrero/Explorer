@@ -216,7 +216,7 @@ function App() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [cheatsheetOpen, setCheatsheetOpen] = useState(false);
-  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; nodeId: string } | null>(null);
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; nodeId: string; isSidebar?: boolean } | null>(null);
   const [toast, setToast] = useState<string | null>(null);
 
   const showToast = useCallback((msg: string) => {
@@ -364,6 +364,13 @@ function App() {
           } else {
             setContextMenu({ x: e.clientX, y: e.clientY, nodeId: "" });
           }
+          return;
+        }
+        const sidebarItem = (e.target as HTMLElement).closest(".sidebar-item");
+        if (sidebarItem) {
+          e.preventDefault();
+          const sidebarId = sidebarItem.getAttribute("data-sidebar-id") || "";
+          setContextMenu({ x: e.clientX, y: e.clientY, nodeId: sidebarId, isSidebar: true });
         }
       }}
     >
@@ -437,6 +444,7 @@ function App() {
             onClose={() => setContextMenu(null)}
             onRun={(item) => showToast(item.name)}
             isFolder={contextNode?.kind === "folder"}
+            isSidebar={contextMenu.isSidebar}
             isPinned={contextDiskPath ? isPinned(contextDiskPath) : false}
             onTogglePin={
               contextDiskPath && contextNode?.kind === "folder"

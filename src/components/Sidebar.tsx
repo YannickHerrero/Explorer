@@ -123,6 +123,8 @@ function SidebarRow({
     <div
       onClick={onClick}
       className="sidebar-item"
+      data-sidebar-id={item.id}
+      data-disk-path={item.diskPath || ""}
       style={{
         display: "flex",
         alignItems: "center",
