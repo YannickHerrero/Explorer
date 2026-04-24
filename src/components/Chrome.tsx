@@ -6,7 +6,6 @@ interface ChromeProps {
   path: string[];
   onBack: () => void;
   onFwd: () => void;
-  onPalette: () => void;
   onFolderPalette: () => void;
   onSearch: () => void;
   onToggleSidebar: () => void;
@@ -37,7 +36,6 @@ export function Chrome({
   path,
   onBack,
   onFwd,
-  onPalette,
   onFolderPalette,
   onSearch,
   onToggleSidebar,

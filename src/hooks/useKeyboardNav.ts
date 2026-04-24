@@ -16,7 +16,6 @@ interface KeyboardNavOptions {
   onToggleSearch: () => void;
   onToggleSettings: () => void;
   onToggleCheatsheet: () => void;
-  onToast: (msg: string) => void;
   onDismissOverlays: () => void;
   onOpen: () => void;
   onCopy: () => void;
@@ -47,7 +46,6 @@ export function useKeyboardNav(opts: KeyboardNavOptions) {
         onToggleSearch,
         onToggleSettings,
         onToggleCheatsheet,
-        onToast,
         onDismissOverlays,
         onOpen,
         onCopy,

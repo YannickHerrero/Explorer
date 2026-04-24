@@ -390,7 +390,6 @@ function App() {
     onToggleSearch: () => setSearchOpen((v) => !v),
     onToggleSettings: () => setSettingsOpen((v) => !v),
     onToggleCheatsheet: () => setCheatsheetOpen((v) => !v),
-    onToast: showToast,
     onDismissOverlays: () => {
       setPaletteOpen(false);
       setFolderPaletteOpen(false);
@@ -491,7 +490,6 @@ function App() {
           onFwd={nav.goFwd}
           canBack={nav.histIdx > 0}
           canFwd={nav.histIdx < nav.historyLength - 1}
-          onPalette={() => setPaletteOpen(true)}
           onFolderPalette={() => setFolderPaletteOpen(true)}
           onSearch={() => setSearchOpen(!searchOpen)}
           onToggleSidebar={() => handleSetSidebarOpen(!sidebarOpen)}
