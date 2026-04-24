@@ -331,6 +331,12 @@ function App() {
     return realNav.state?.pathMap.get(contextMenu.nodeId) ?? null;
   }, [contextMenu, isTauriReady, realNav.state]);
 
+  const selectedDiskPath = useMemo(() => {
+    if (!isTauriReady || nav.selection.length === 0) return undefined;
+    const lastId = nav.selection[nav.selection.length - 1];
+    return realNav.state?.pathMap.get(lastId) ?? undefined;
+  }, [isTauriReady, nav.selection, realNav.state]);
+
   // Show skeleton while loading in Tauri mode
   if (IS_TAURI && !isTauriReady) {
     return <LoadingSkeleton />;
@@ -395,6 +401,7 @@ function App() {
             density={density}
             focusedCol={nav.focusedCol}
             setFocusedCol={nav.setFocusedCol}
+            selectedDiskPath={selectedDiskPath}
           />
         </div>
 

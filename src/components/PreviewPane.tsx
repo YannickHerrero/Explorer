@@ -1,13 +1,28 @@
+import { useState, useEffect } from "react";
 import { Icon, kindIcon, Kbd } from "@/icons/Icon";
 import type { FileNode, DensityTokens } from "@/types";
+
+const IS_TAURI = "__TAURI_INTERNALS__" in window;
+
+function useAssetUrl(diskPath?: string): string | undefined {
+  const [url, setUrl] = useState<string | undefined>();
+  useEffect(() => {
+    if (!diskPath || !IS_TAURI) { setUrl(diskPath); return; }
+    import("@tauri-apps/api/core").then(({ convertFileSrc }) => {
+      setUrl(convertFileSrc(diskPath));
+    });
+  }, [diskPath]);
+  return url;
+}
 
 interface PreviewPaneProps {
   node: FileNode;
   density: DensityTokens;
   width: number;
+  diskPath?: string;
 }
 
-export function PreviewPane({ node, width }: PreviewPaneProps) {
+export function PreviewPane({ node, width, diskPath }: PreviewPaneProps) {
   if (node.kind === "folder") {
     return (
       <div
@@ -37,7 +52,7 @@ export function PreviewPane({ node, width }: PreviewPaneProps) {
         gap: 18,
       }}
     >
-      <FilePreview node={node} />
+      <FilePreview node={node} diskPath={diskPath} />
     </div>
   );
 }
@@ -101,13 +116,27 @@ function FolderPreview({ node }: { node: FileNode }) {
   );
 }
 
-function FilePreview({ node }: { node: FileNode }) {
+function FilePreview({ node, diskPath }: { node: FileNode; diskPath?: string }) {
   const isImage = node.kind === "image";
+  const assetUrl = useAssetUrl(isImage ? diskPath : undefined);
 
   return (
     <>
       <div style={{ marginBottom: 2 }}>
-        {isImage ? (
+        {isImage && assetUrl ? (
+          <img
+            src={assetUrl}
+            alt={node.name}
+            style={{
+              width: "100%",
+              maxHeight: 220,
+              objectFit: "contain",
+              borderRadius: 3,
+              border: "1px solid var(--line)",
+              background: "var(--paper-deep)",
+            }}
+          />
+        ) : isImage ? (
           <Thumb label={`image \u2014 ${node.dims || "preview"}`} h={220} tone={node.preview} />
         ) : node.kind === "pdf" ? (
           <DocumentPreview node={node} />
