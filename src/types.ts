@@ -61,6 +61,7 @@ export interface SidebarItem {
   name: string;
   icon: string;
   targetPath?: string[];
+  diskPath?: string;
   badge?: string;
   color?: string;
 }
