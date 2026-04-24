@@ -2,6 +2,11 @@ import { useState, useEffect, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import type { ThemeKey, DensityKey } from "@/types";
 
+export interface PinnedFolder {
+  name: string;
+  path: string;
+}
+
 interface AppConfig {
   theme: ThemeKey;
   density: DensityKey;
@@ -9,6 +14,7 @@ interface AppConfig {
   show_hidden: boolean;
   vim_navigation: boolean;
   last_path: string | null;
+  pinned_folders: PinnedFolder[];
 }
 
 const DEFAULT_CONFIG: AppConfig = {
@@ -18,6 +24,7 @@ const DEFAULT_CONFIG: AppConfig = {
   show_hidden: false,
   vim_navigation: true,
   last_path: null,
+  pinned_folders: [],
 };
 
 function isTauri(): boolean {
@@ -28,7 +35,6 @@ export function useConfig() {
   const [config, setConfig] = useState<AppConfig>(DEFAULT_CONFIG);
   const [loaded, setLoaded] = useState(false);
 
-  // Load config on mount
   useEffect(() => {
     if (!isTauri()) {
       setLoaded(true);
@@ -36,7 +42,8 @@ export function useConfig() {
     }
     invoke<AppConfig>("load_config")
       .then((c) => {
-        setConfig(c);
+        // Ensure pinned_folders always exists (old configs may lack it)
+        setConfig({ ...DEFAULT_CONFIG, ...c, pinned_folders: c.pinned_folders || [] });
         setLoaded(true);
       })
       .catch(() => {
@@ -55,5 +62,29 @@ export function useConfig() {
     [config],
   );
 
-  return { config, updateConfig, loaded };
+  const pinFolder = useCallback(
+    (name: string, path: string) => {
+      if (config.pinned_folders.some((p) => p.path === path)) return;
+      updateConfig({
+        pinned_folders: [...config.pinned_folders, { name, path }],
+      });
+    },
+    [config, updateConfig],
+  );
+
+  const unpinFolder = useCallback(
+    (path: string) => {
+      updateConfig({
+        pinned_folders: config.pinned_folders.filter((p) => p.path !== path),
+      });
+    },
+    [config, updateConfig],
+  );
+
+  const isPinned = useCallback(
+    (path: string) => config.pinned_folders.some((p) => p.path === path),
+    [config],
+  );
+
+  return { config, updateConfig, loaded, pinFolder, unpinFolder, isPinned };
 }
