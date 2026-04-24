@@ -4,6 +4,12 @@ use std::path::PathBuf;
 use tauri::Manager;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct PinnedFolder {
+    pub name: String,
+    pub path: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AppConfig {
     pub theme: String,
     pub density: String,
@@ -11,6 +17,8 @@ pub struct AppConfig {
     pub show_hidden: bool,
     pub vim_navigation: bool,
     pub last_path: Option<String>,
+    #[serde(default)]
+    pub pinned_folders: Vec<PinnedFolder>,
 }
 
 impl Default for AppConfig {
@@ -22,6 +30,7 @@ impl Default for AppConfig {
             show_hidden: false,
             vim_navigation: true,
             last_path: None,
+            pinned_folders: Vec::new(),
         }
     }
 }
