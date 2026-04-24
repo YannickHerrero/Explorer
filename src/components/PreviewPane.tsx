@@ -190,7 +190,40 @@ function FilePreview({ node, diskPath, onOpen, fileTags }: { node: FileNode; dis
         </div>
       </div>
 
-      <MetaList items={buildMeta(node, fileTags)} />
+      <MetaList items={buildMeta(node)} />
+
+      {fileTags && fileTags.length > 0 && (
+        <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
+          {fileTags.map((tag) => (
+            <span
+              key={tag.name}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 5,
+                padding: "3px 8px 3px 6px",
+                borderRadius: 4,
+                border: "1px solid var(--line)",
+                background: "var(--paper-deep)",
+                fontFamily: "var(--font-sans)",
+                fontSize: 11,
+                color: "var(--ink-soft)",
+              }}
+            >
+              <span
+                style={{
+                  width: 7,
+                  height: 7,
+                  borderRadius: "50%",
+                  background: tag.color,
+                  flexShrink: 0,
+                }}
+              />
+              {tag.name}
+            </span>
+          ))}
+        </div>
+      )}
 
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
         <PreviewBtn icon="eye" label="Quick Look" kbd={["Space"]} onClick={onOpen} />
@@ -216,7 +249,7 @@ function kindLabel(k: string): string {
   return map[k] || "File";
 }
 
-function buildMeta(node: FileNode, fileTags?: { name: string; color: string }[]): [string, string][] {
+function buildMeta(node: FileNode): [string, string][] {
   const base: [string, string][] = [
     ["Kind", kindLabel(node.kind)],
     ["Size", node.size || "\u2014"],
@@ -225,10 +258,6 @@ function buildMeta(node: FileNode, fileTags?: { name: string; color: string }[])
   if (node.dims) base.splice(2, 0, ["Dimensions", node.dims]);
   if (node.duration) base.splice(2, 0, ["Duration", node.duration]);
   base.push(["Where", "~/projects/..."]);
-  const tagNames = fileTags && fileTags.length > 0
-    ? fileTags.map((t) => t.name).join(", ")
-    : "\u2014";
-  base.push(["Tags", tagNames]);
   return base;
 }
 
