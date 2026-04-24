@@ -2,7 +2,11 @@ use serde::Serialize;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
+use std::sync::OnceLock;
 use std::time::SystemTime;
+
+static WSL_CACHE: OnceLock<Vec<WslDistro>> = OnceLock::new();
+static DRIVES_CACHE: OnceLock<Vec<DriveInfo>> = OnceLock::new();
 
 #[derive(Debug, Serialize)]
 pub struct UserDirs {
@@ -31,17 +35,15 @@ pub fn get_user_dirs() -> Result<UserDirs, String> {
     })
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone)]
 pub struct WslDistro {
     pub name: String,
     pub path: String,
 }
 
-#[tauri::command]
-pub fn get_wsl_distros() -> Vec<WslDistro> {
+fn detect_wsl_distros() -> Vec<WslDistro> {
     let mut distros = Vec::new();
 
-    // Method 1: try listing \\wsl.localhost\ and \\wsl$\ via filesystem
     for base in &["\\\\wsl.localhost", "\\\\wsl$"] {
         let base_path = PathBuf::from(base);
         if let Ok(entries) = fs::read_dir(&base_path) {
@@ -55,14 +57,12 @@ pub fn get_wsl_distros() -> Vec<WslDistro> {
         }
     }
 
-    // Method 2: fallback to `wsl --list --quiet` if filesystem method found nothing
     if distros.is_empty() {
         if let Ok(output) = Command::new("wsl")
             .args(["--list", "--quiet"])
             .output()
         {
             if output.status.success() {
-                // wsl output is UTF-16LE on Windows
                 let text = String::from_utf16_lossy(
                     &output
                         .stdout
@@ -75,7 +75,6 @@ pub fn get_wsl_distros() -> Vec<WslDistro> {
                     if name.is_empty() {
                         continue;
                     }
-                    // Try both UNC path formats
                     let path = format!("\\\\wsl.localhost\\{}", name);
                     let alt_path = format!("\\\\wsl$\\{}", name);
                     let final_path = if PathBuf::from(&path).exists() {
@@ -97,18 +96,21 @@ pub fn get_wsl_distros() -> Vec<WslDistro> {
     distros
 }
 
-#[derive(Debug, Serialize)]
+#[tauri::command]
+pub fn get_wsl_distros() -> Vec<WslDistro> {
+    WSL_CACHE.get_or_init(detect_wsl_distros).clone()
+}
+
+#[derive(Debug, Serialize, Clone)]
 pub struct DriveInfo {
     pub letter: String,
     pub path: String,
     pub label: Option<String>,
 }
 
-#[tauri::command]
-pub fn get_drives() -> Vec<DriveInfo> {
+fn detect_drives() -> Vec<DriveInfo> {
     let mut drives = Vec::new();
 
-    // On Windows, check common drive letters
     #[cfg(target_os = "windows")]
     {
         for letter in b'A'..=b'Z' {
@@ -124,7 +126,6 @@ pub fn get_drives() -> Vec<DriveInfo> {
         }
     }
 
-    // On Linux, list mount points (useful for testing)
     #[cfg(not(target_os = "windows"))]
     {
         if let Ok(entries) = fs::read_dir("/mnt") {
@@ -142,6 +143,11 @@ pub fn get_drives() -> Vec<DriveInfo> {
     }
 
     drives
+}
+
+#[tauri::command]
+pub fn get_drives() -> Vec<DriveInfo> {
+    DRIVES_CACHE.get_or_init(detect_drives).clone()
 }
 
 #[derive(Debug, Serialize, Clone)]
@@ -225,45 +231,44 @@ pub fn read_dir(path: String, show_hidden: bool) -> Result<Vec<FileEntry>, Strin
         return Err(format!("Not a directory: {}", path));
     }
 
-    let mut entries: Vec<FileEntry> = Vec::new();
-
+    // Collect entries with pre-computed sort keys to avoid repeated allocations
     let read = fs::read_dir(&dir_path).map_err(|e| format!("Cannot read directory: {}", e))?;
+    let mut sortable: Vec<(String, FileEntry)> = Vec::new();
 
-    for entry in read {
-        let entry = match entry {
-            Ok(e) => e,
-            Err(_) => continue,
-        };
-
+    for entry in read.flatten() {
         let name = entry.file_name().to_string_lossy().to_string();
 
-        // Skip hidden files unless requested
         if !show_hidden && name.starts_with('.') {
             continue;
         }
 
         let entry_path = entry.path();
-        let metadata = match entry.metadata() {
-            Ok(m) => m,
+
+        // Use file_type() first (no extra stat on most platforms), fall back to metadata
+        let file_type = match entry.file_type() {
+            Ok(ft) => ft,
             Err(_) => continue,
         };
+        let is_dir = file_type.is_dir();
 
-        let is_dir = metadata.is_dir();
-        let size = if is_dir {
-            None
+        // Only call metadata() once, and only when we need size/modified
+        let (size, modified) = if is_dir {
+            (None, entry.metadata().ok().and_then(|m| m.modified().ok()).map(format_time))
         } else {
-            Some(format_size(metadata.len()))
+            match entry.metadata() {
+                Ok(m) => (
+                    Some(format_size(m.len())),
+                    m.modified().ok().map(format_time),
+                ),
+                Err(_) => (None, None),
+            }
         };
-
-        let modified = metadata
-            .modified()
-            .ok()
-            .map(format_time);
 
         let kind = detect_kind(&entry_path, is_dir);
         let id = path_to_id(&entry_path);
+        let sort_key = name.to_lowercase();
 
-        entries.push(FileEntry {
+        sortable.push((sort_key, FileEntry {
             id,
             name,
             kind,
@@ -272,17 +277,19 @@ pub fn read_dir(path: String, show_hidden: bool) -> Result<Vec<FileEntry>, Strin
             is_dir,
             path: entry_path.to_string_lossy().to_string(),
             children: None,
-        });
+        }));
     }
 
-    // Sort: folders first, then alphabetically (case-insensitive)
-    entries.sort_by(|a, b| {
-        match (a.is_dir, b.is_dir) {
+    // Sort: folders first, then by pre-computed lowercase name (no allocations in comparator)
+    sortable.sort_by(|a, b| {
+        match (a.1.is_dir, b.1.is_dir) {
             (true, false) => std::cmp::Ordering::Less,
             (false, true) => std::cmp::Ordering::Greater,
-            _ => a.name.to_lowercase().cmp(&b.name.to_lowercase()),
+            _ => a.0.cmp(&b.0),
         }
     });
+
+    let entries: Vec<FileEntry> = sortable.into_iter().map(|(_, e)| e).collect();
 
     Ok(entries)
 }
@@ -316,18 +323,6 @@ pub fn get_file_meta(path: String) -> Result<FileEntry, String> {
     let kind = detect_kind(&file_path, is_dir);
     let id = path_to_id(&file_path);
 
-    let children = if is_dir {
-        // Return child count info but not full listing
-        let count = fs::read_dir(&file_path)
-            .map(|rd| rd.count())
-            .unwrap_or(0);
-        // We don't populate children here — the frontend calls read_dir separately
-        let _ = count;
-        None
-    } else {
-        None
-    };
-
     Ok(FileEntry {
         id,
         name,
@@ -336,6 +331,6 @@ pub fn get_file_meta(path: String) -> Result<FileEntry, String> {
         modified,
         is_dir,
         path: file_path.to_string_lossy().to_string(),
-        children,
+        children: None,
     })
 }
