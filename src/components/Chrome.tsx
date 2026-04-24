@@ -185,7 +185,7 @@ function PaletteButton({ onClick }: { onClick: () => void }) {
       }}
     >
       <Icon name="search" size={11} />
-      <span style={{ color: "var(--muted)" }}>Go to…</span>
+      <span style={{ color: "var(--muted)" }}>Go to...</span>
       <span style={{ display: "inline-flex", gap: 1 }}>
         <Kbd k="Ctrl" /><Kbd k="P" />
       </span>

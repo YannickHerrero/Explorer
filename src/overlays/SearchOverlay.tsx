@@ -98,7 +98,7 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
             ref={inputRef}
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Search everywhere\u2026"
+            placeholder="Search everywhere..."
             style={{
               flex: 1,
               border: "none",

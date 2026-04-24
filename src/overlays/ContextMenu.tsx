@@ -46,7 +46,7 @@ export function ContextMenu({ x, y, onClose, onRun, isFolder, isPinned, onToggle
   }
 
   sections.push([
-    { id: "mv", name: "Move to\u2026", kbd: ["Alt+Ctrl", "M"], icon: "move" },
+    { id: "mv", name: "Move to...", kbd: ["Alt+Ctrl", "M"], icon: "move" },
     { id: "dup", name: "Duplicate", kbd: ["Ctrl", "D"], icon: "copy" },
     { id: "ren", name: "Rename", kbd: ["Enter"], icon: "edit" },
     { id: "tag", name: "Add Tag", kbd: ["Ctrl", "T"], icon: "tag" },

@@ -105,7 +105,7 @@ export function FolderPalette({ open, onClose, onNavigate, sections }: FolderPal
             value={q}
             onChange={(e) => { setQ(e.target.value); setSel(0); }}
             onKeyDown={handleKey}
-            placeholder="Go to folder…"
+            placeholder="Go to folder..."
             style={{
               flex: 1,
               border: "none",

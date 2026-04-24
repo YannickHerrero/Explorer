@@ -193,7 +193,7 @@ function buildMeta(node: FileNode): [string, string][] {
   ];
   if (node.dims) base.splice(2, 0, ["Dimensions", node.dims]);
   if (node.duration) base.splice(2, 0, ["Duration", node.duration]);
-  base.push(["Where", "~/projects/\u2026"]);
+  base.push(["Where", "~/projects/..."]);
   base.push(["Tags", "\u2014"]);
   return base;
 }

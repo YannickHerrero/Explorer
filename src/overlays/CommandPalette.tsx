@@ -109,7 +109,7 @@ export function CommandPalette({ open, onClose, onRun }: PaletteProps) {
             value={q}
             onChange={(e) => { setQ(e.target.value); setSel(0); }}
             onKeyDown={handleKey}
-            placeholder="Type a command or search files\u2026"
+            placeholder="Type a command or search files..."
             style={{
               flex: 1,
               border: "none",
