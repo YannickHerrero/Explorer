@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { Icon, Kbd } from "@/icons/Icon";
 import { COMMANDS } from "@/data/commands";
 import type { Command } from "@/types";
@@ -38,6 +38,10 @@ export function CommandPalette({ open, onClose, onRun }: PaletteProps) {
     });
     return map;
   }, [filtered]);
+
+  const selectedRef = useCallback((node: HTMLDivElement | null) => {
+    node?.scrollIntoView({ block: "nearest" });
+  }, [sel]);
 
   const handleKey = (e: React.KeyboardEvent) => {
     if (e.key === "ArrowDown") {
@@ -148,6 +152,7 @@ export function CommandPalette({ open, onClose, onRun }: PaletteProps) {
                   return (
                     <div
                       key={cmd.id}
+                      ref={isSel ? selectedRef : undefined}
                       onMouseEnter={() => setSel(flatIdx)}
                       onClick={() => { onRun(cmd); onClose(); }}
                       style={{
