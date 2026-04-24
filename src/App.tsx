@@ -306,14 +306,20 @@ function App() {
     }
   }, [isTauriReady, nav.selection, realNav.state]);
 
-  const handleCopy = useCallback(() => {
+  const handleCopy = useCallback(async () => {
     if (!isTauriReady) return;
     const lastId = nav.selection[nav.selection.length - 1];
     const diskPath = realNav.state?.pathMap.get(lastId);
     const node = resolveSelection(tree, nav.selection);
     if (diskPath && node) {
       setClipboard({ path: diskPath, name: node.name, mode: "copy" });
-      showToast(`Copied "${node.name}"`);
+      try {
+        const { invoke } = await import("@tauri-apps/api/core");
+        const result = await invoke<string>("copy_to_clipboard", { path: diskPath, kind: node.kind });
+        showToast(result === "image" ? `Copied "${node.name}" as image` : `Copied "${node.name}"`);
+      } catch {
+        showToast(`Copied "${node.name}"`);
+      }
     }
   }, [isTauriReady, nav.selection, realNav.state, tree]);
 

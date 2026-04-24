@@ -4,6 +4,7 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::OnceLock;
 use std::time::SystemTime;
+use arboard::Clipboard;
 
 static WSL_CACHE: OnceLock<Vec<WslDistro>> = OnceLock::new();
 static DRIVES_CACHE: OnceLock<Vec<DriveInfo>> = OnceLock::new();
@@ -397,4 +398,35 @@ pub fn move_path(source: String, dest_dir: String) -> Result<String, String> {
 pub fn trash_path(path: String) -> Result<(), String> {
     trash::delete(&path).map_err(|e| format!("Failed to move to trash: {}", e))?;
     Ok(())
+}
+
+#[tauri::command]
+pub fn copy_to_clipboard(path: String, kind: String) -> Result<String, String> {
+    let file_path = PathBuf::from(&path);
+    if !file_path.exists() {
+        return Err(format!("File not found: {}", path));
+    }
+
+    let mut clipboard = Clipboard::new().map_err(|e| format!("Clipboard error: {}", e))?;
+
+    if kind == "image" {
+        // Read the image and copy pixel data to clipboard
+        let img = image::open(&file_path)
+            .map_err(|e| format!("Failed to read image: {}", e))?;
+        let rgba = img.to_rgba8();
+        let (w, h) = rgba.dimensions();
+        let img_data = arboard::ImageData {
+            width: w as usize,
+            height: h as usize,
+            bytes: std::borrow::Cow::Owned(rgba.into_raw()),
+        };
+        clipboard.set_image(img_data)
+            .map_err(|e| format!("Failed to copy image: {}", e))?;
+        Ok("image".to_string())
+    } else {
+        // Copy file path as text for non-image files
+        clipboard.set_text(&path)
+            .map_err(|e| format!("Failed to copy to clipboard: {}", e))?;
+        Ok("text".to_string())
+    }
 }
