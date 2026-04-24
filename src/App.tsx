@@ -226,22 +226,7 @@ function App() {
   const [updateAvailable, setUpdateAvailable] = useState<{ version: string; body?: string } | null>(null);
   const [updateProgress, setUpdateProgress] = useState<string | null>(null);
 
-  // Check for updates on startup
-  useEffect(() => {
-    if (!IS_TAURI) return;
-    const timer = setTimeout(async () => {
-      try {
-        const { check } = await import("@tauri-apps/plugin-updater");
-        const update = await check();
-        if (update) {
-          setUpdateAvailable({ version: update.version, body: update.body ?? undefined });
-        }
-      } catch {
-        // Silently ignore update check failures
-      }
-    }, 3000); // Delay 3s after startup
-    return () => clearTimeout(timer);
-  }, []);
+  // Update check is manual-only — triggered from Settings
 
   const handleUpdate = useCallback(async () => {
     try {
