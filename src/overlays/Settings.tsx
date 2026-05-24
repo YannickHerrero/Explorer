@@ -270,9 +270,7 @@ export function Settings({
 
               <Section title="Keyboard" subtitle="Explorer is keyboard-first. Press Ctrl+/ anywhere for the full map.">
                 <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                  <SettingsRow label="Show shortcut hints on hover" value={true} />
                   <SettingsRow label="Use Vim-style navigation (hjkl)" value={false} />
-                  <SettingsRow label="Quick-find on any keystroke" value={true} />
                 </div>
               </Section>
             </>
