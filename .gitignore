@@ -12,6 +12,14 @@ dist
 dist-ssr
 *.local
 
+# Claude Code session state
+.claude/
+
+# tauri icon outputs we don't ship (Windows-only app)
+src-tauri/icons/64x64.png
+src-tauri/icons/android/
+src-tauri/icons/ios/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
