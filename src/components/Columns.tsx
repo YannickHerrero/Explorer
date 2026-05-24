@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback, memo } from "react";
+import { useEffect, useRef, useCallback, useState, memo } from "react";
 import { Icon, kindIcon } from "@/icons/Icon";
 import { PreviewPane } from "@/components/PreviewPane";
 import { resolveSelection } from "@/data";
@@ -17,7 +17,11 @@ interface ColumnsProps {
   fileTags?: { name: string; color: string }[];
   previewOpen?: boolean;
   shouldShowRow?: (nodeId: string, kind: string) => boolean;
+  getSourcePath?: (nodeId: string) => string | null;
+  onDropOnFolder?: (sourcePath: string, destFolderId: string, mode: "move" | "copy") => void;
 }
+
+export const EXPLORER_DRAG_MIME = "application/x-explorer-source-path";
 
 interface ColumnData {
   items: FileNode[];
@@ -41,7 +45,7 @@ export function buildColumnsFromSelection(selection: string[], tree: FileNode): 
   return cols;
 }
 
-export function Columns({ tree, selection, onSelect, onNavigate, density, focusedCol, setFocusedCol, selectedDiskPath, onOpenFile, fileTags, previewOpen = true, shouldShowRow }: ColumnsProps) {
+export function Columns({ tree, selection, onSelect, onNavigate, density, focusedCol, setFocusedCol, selectedDiskPath, onOpenFile, fileTags, previewOpen = true, shouldShowRow, getSourcePath, onDropOnFolder }: ColumnsProps) {
   const rawColumns = buildColumnsFromSelection(selection, tree);
   const columns = shouldShowRow
     ? rawColumns.map((c) => ({ items: c.items.filter((it) => shouldShowRow(it.id, it.kind)) }))
@@ -77,6 +81,8 @@ export function Columns({ tree, selection, onSelect, onNavigate, density, focuse
           focused={focusedCol === idx}
           onFocus={() => setFocusedCol(idx)}
           width={density.colW}
+          getSourcePath={getSourcePath}
+          onDropOnFolder={onDropOnFolder}
         />
       ))}
       {previewOpen && (
@@ -104,6 +110,8 @@ function Column({
   focused,
   onFocus,
   width,
+  getSourcePath,
+  onDropOnFolder,
 }: {
   items: FileNode[];
   selectedId: string | undefined;
@@ -113,6 +121,8 @@ function Column({
   focused: boolean;
   onFocus: () => void;
   width: number;
+  getSourcePath?: (id: string) => string | null;
+  onDropOnFolder?: (sourcePath: string, destFolderId: string, mode: "move" | "copy") => void;
 }) {
   const selectedRef = useCallback((node: HTMLDivElement | null) => {
     node?.scrollIntoView({ block: "nearest" });
@@ -154,6 +164,8 @@ function Column({
             onDoubleClick={() => onOpen(item)}
             density={density}
             scrollRef={item.id === selectedId ? selectedRef : undefined}
+            getSourcePath={getSourcePath}
+            onDropOnFolder={onDropOnFolder}
           />
         ))
       )}
@@ -171,6 +183,8 @@ function FileRow({
   onDoubleClick,
   density,
   scrollRef,
+  getSourcePath,
+  onDropOnFolder,
 }: {
   item: FileNode;
   selected: boolean;
@@ -179,11 +193,17 @@ function FileRow({
   onDoubleClick: () => void;
   density: DensityTokens;
   scrollRef?: (node: HTMLDivElement | null) => void;
+  getSourcePath?: (id: string) => string | null;
+  onDropOnFolder?: (sourcePath: string, destFolderId: string, mode: "move" | "copy") => void;
 }) {
   const isFolder = item.kind === "folder";
-  const selBg = selected ? (columnFocused ? "var(--accent)" : "var(--paper-deep)") : "transparent";
+  const [dropActive, setDropActive] = useState(false);
+  const selBg = dropActive
+    ? "var(--paper-deep)"
+    : selected ? (columnFocused ? "var(--accent)" : "var(--paper-deep)") : "transparent";
   const selFg = selected ? (columnFocused ? "var(--paper)" : "var(--ink)") : "var(--ink)";
   const iconColor = selected && columnFocused ? "var(--paper)" : "var(--muted)";
+  const borderStyle = dropActive ? "1px dashed var(--accent)" : "1px solid transparent";
 
   return (
     <div
@@ -192,6 +212,33 @@ function FileRow({
       onDoubleClick={onDoubleClick}
       className="file-row"
       data-node-id={item.id}
+      draggable={!!getSourcePath}
+      onDragStart={(e) => {
+        if (!getSourcePath) return;
+        const src = getSourcePath(item.id);
+        if (!src) {
+          e.preventDefault();
+          return;
+        }
+        e.dataTransfer.setData(EXPLORER_DRAG_MIME, src);
+        e.dataTransfer.effectAllowed = "copyMove";
+      }}
+      onDragOver={(e) => {
+        if (!isFolder || !onDropOnFolder) return;
+        if (!e.dataTransfer.types.includes(EXPLORER_DRAG_MIME)) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = e.ctrlKey || e.metaKey ? "copy" : "move";
+        setDropActive(true);
+      }}
+      onDragLeave={() => setDropActive(false)}
+      onDrop={(e) => {
+        if (!isFolder || !onDropOnFolder) return;
+        const src = e.dataTransfer.getData(EXPLORER_DRAG_MIME);
+        setDropActive(false);
+        if (!src) return;
+        e.preventDefault();
+        onDropOnFolder(src, item.id, e.ctrlKey || e.metaKey ? "copy" : "move");
+      }}
       style={{
         display: "flex",
         alignItems: "center",
@@ -206,6 +253,8 @@ function FileRow({
         fontFamily: "var(--font-sans)",
         fontSize: density.fontBody,
         userSelect: "none",
+        border: borderStyle,
+        boxSizing: "border-box",
       }}
     >
       <span style={{ color: iconColor, display: "inline-flex" }}>

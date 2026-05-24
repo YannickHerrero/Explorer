@@ -766,6 +766,24 @@ function App() {
             fileTags={selectedFileTags}
             previewOpen={previewOpen}
             shouldShowRow={shouldShowRow}
+            getSourcePath={(id) => realNav.state?.pathMap.get(id) ?? null}
+            onDropOnFolder={async (src, destFolderId, mode) => {
+              const destDir = realNav.state?.pathMap.get(destFolderId);
+              if (!destDir || src === destDir) return;
+              try {
+                const { invoke } = await import("@tauri-apps/api/core");
+                if (mode === "copy") {
+                  await invoke("copy_path", { source: src, destDir });
+                  showToast(`Copied to "${destDir.split(/[/\\]/).pop()}"`);
+                } else {
+                  await invoke("move_path", { source: src, destDir });
+                  showToast(`Moved to "${destDir.split(/[/\\]/).pop()}"`);
+                }
+                if (realNav.refreshCurrentDir) realNav.refreshCurrentDir();
+              } catch (err) {
+                showToast(`Drop failed: ${err}`);
+              }
+            }}
           />
         </div>
 
