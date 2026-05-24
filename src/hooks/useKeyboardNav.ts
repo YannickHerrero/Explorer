@@ -16,6 +16,7 @@ interface KeyboardNavOptions {
   onToggleSearch: () => void;
   onToggleSettings: () => void;
   onToggleCheatsheet: () => void;
+  onToggleSidebar: () => void;
   onDismissOverlays: () => void;
   onOpen: () => void;
   onCopy: () => void;
@@ -56,6 +57,7 @@ export function useKeyboardNav(opts: KeyboardNavOptions) {
         onToggleSearch,
         onToggleSettings,
         onToggleCheatsheet,
+        onToggleSidebar,
         onDismissOverlays,
         onOpen,
         onCopy,
@@ -89,6 +91,7 @@ export function useKeyboardNav(opts: KeyboardNavOptions) {
       if (meta && e.key.toLowerCase() === "f") { e.preventDefault(); onToggleSearch(); return; }
       if (meta && e.key === ",") { e.preventDefault(); onToggleSettings(); return; }
       if (meta && e.key === "/") { e.preventDefault(); onToggleCheatsheet(); return; }
+      if (meta && e.altKey && e.key.toLowerCase() === "s") { e.preventDefault(); onToggleSidebar(); return; }
 
       if (e.key === "Escape") {
         onDismissOverlays();
@@ -182,7 +185,7 @@ export function useKeyboardNav(opts: KeyboardNavOptions) {
       } else if (e.key === "p") {
         e.preventDefault();
         onPaste();
-      } else if (meta && e.key === "Backspace") {
+      } else if (meta && (e.key === "Backspace" || e.key === "Delete")) {
         e.preventDefault();
         onTrash();
       }

@@ -571,6 +571,7 @@ function App() {
     onToggleSearch: () => setSearchOpen((v) => !v),
     onToggleSettings: () => setSettingsOpen((v) => !v),
     onToggleCheatsheet: () => setCheatsheetOpen((v) => !v),
+    onToggleSidebar: () => handleSetSidebarOpen(!sidebarOpen),
     onDismissOverlays: () => {
       setPaletteOpen(false);
       setFolderPaletteOpen(false);
