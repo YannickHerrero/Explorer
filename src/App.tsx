@@ -454,6 +454,10 @@ function App() {
     onPaste: handlePaste,
     onTrash: handleTrash,
     onToggleTagPicker: () => setTagPickerOpen((v) => !v),
+    onToggleHidden: () => {
+      handleSetShowHidden(!showHidden);
+      showToast(showHidden ? "Hidden files: off" : "Hidden files: on");
+    },
   });
 
   const pathNames = useMemo(() => buildPathNames(tree, nav.selection), [tree, nav.selection]);

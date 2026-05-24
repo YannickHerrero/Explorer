@@ -23,6 +23,7 @@ interface KeyboardNavOptions {
   onPaste: () => void;
   onTrash: () => void;
   onToggleTagPicker: () => void;
+  onToggleHidden: () => void;
 }
 
 export function useKeyboardNav(opts: KeyboardNavOptions) {
@@ -53,6 +54,7 @@ export function useKeyboardNav(opts: KeyboardNavOptions) {
         onPaste,
         onTrash,
         onToggleTagPicker,
+        onToggleHidden,
       } = ref.current;
 
       const target = e.target as HTMLElement;
@@ -75,6 +77,12 @@ export function useKeyboardNav(opts: KeyboardNavOptions) {
       }
 
       if (overlaysOpen) return;
+
+      if (!meta && !e.altKey && e.shiftKey && e.key === "L") {
+        e.preventDefault();
+        onToggleHidden();
+        return;
+      }
 
       if (meta && e.key === "[") { e.preventDefault(); goBack(); return; }
       if (meta && e.key === "]") { e.preventDefault(); goFwd(); return; }
