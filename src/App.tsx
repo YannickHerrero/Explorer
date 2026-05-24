@@ -303,6 +303,8 @@ function App() {
       handleNewFolderOpen();
     } else if (cmd.id === "c-new-file") {
       handleNewFileOpen();
+    } else if (cmd.id === "c-duplicate") {
+      handleDuplicate();
     } else {
       showToast(cmd.name);
     }
@@ -415,6 +417,25 @@ function App() {
     setPrompt({ kind: "new-file", parentDir: parent });
   }, [isTauriReady, currentParentDir]);
 
+  const handleDuplicate = useCallback(async () => {
+    if (!isTauriReady) return;
+    const lastId = nav.selection[nav.selection.length - 1];
+    const diskPath = realNav.state?.pathMap.get(lastId);
+    const node = resolveSelection(tree, nav.selection);
+    if (!diskPath || !node || lastId === "root") return;
+    const parentId = nav.selection[nav.selection.length - 2];
+    const destDir = parentId ? realNav.state?.pathMap.get(parentId) : realNav.state?.rootPath;
+    if (!destDir) return;
+    try {
+      const { invoke } = await import("@tauri-apps/api/core");
+      await invoke("copy_path", { source: diskPath, destDir });
+      showToast(`Duplicated "${node.name}"`);
+      if (realNav.refreshCurrentDir) realNav.refreshCurrentDir();
+    } catch (err) {
+      showToast(`Duplicate failed: ${err}`);
+    }
+  }, [isTauriReady, nav.selection, realNav, tree]);
+
   const handlePromptSubmit = useCallback(async (value: string) => {
     if (!prompt) return;
     setPrompt(null);
@@ -493,6 +514,7 @@ function App() {
     onRename: handleRenameOpen,
     onNewFolder: handleNewFolderOpen,
     onNewFile: handleNewFileOpen,
+    onDuplicate: handleDuplicate,
     vimNavigation,
   });
 
@@ -692,6 +714,7 @@ function App() {
               if (item.id === "trash") handleTrash();
               else if (item.id === "open" || item.id === "ql") handleOpenFile();
               else if (item.id === "ren") handleRenameOpen();
+              else if (item.id === "dup") handleDuplicate();
               else showToast(item.name);
             }}
             isFolder={contextNode?.kind === "folder"}

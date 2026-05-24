@@ -28,6 +28,7 @@ interface KeyboardNavOptions {
   onRename: () => void;
   onNewFolder: () => void;
   onNewFile: () => void;
+  onDuplicate: () => void;
   vimNavigation: boolean;
 }
 
@@ -64,6 +65,7 @@ export function useKeyboardNav(opts: KeyboardNavOptions) {
         onRename,
         onNewFolder,
         onNewFile,
+        onDuplicate,
         vimNavigation,
       } = ref.current;
 
@@ -112,6 +114,7 @@ export function useKeyboardNav(opts: KeyboardNavOptions) {
       if (meta && e.key.toLowerCase() === "c") { e.preventDefault(); onCopy(); return; }
       if (meta && e.key.toLowerCase() === "x") { e.preventDefault(); onCut(); return; }
       if (meta && e.key.toLowerCase() === "v") { e.preventDefault(); onPaste(); return; }
+      if (meta && e.key.toLowerCase() === "d") { e.preventDefault(); onDuplicate(); return; }
 
       const columns = buildColumnsFromSelection(selection, tree);
       const currentItems = columns[focusedCol]?.items || [];
