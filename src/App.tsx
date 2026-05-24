@@ -299,6 +299,8 @@ function App() {
       handleOpenFile();
     } else if (cmd.id === "c-rename") {
       handleRenameOpen();
+    } else if (cmd.id === "c-new-folder") {
+      handleNewFolderOpen();
     } else {
       showToast(cmd.name);
     }
@@ -375,6 +377,19 @@ function App() {
     }
   }, [isTauriReady, clipboard, tree, nav.selection, realNav.state]);
 
+  const currentParentDir = useCallback((): string | null => {
+    if (!realNav.state) return null;
+    const node = resolveSelection(tree, nav.selection);
+    const lastId = nav.selection[nav.selection.length - 1];
+    if (node?.kind === "folder" && lastId) {
+      return realNav.state.pathMap.get(lastId) ?? realNav.state.rootPath;
+    }
+    // Selected item is a file — use its parent
+    const parentId = nav.selection[nav.selection.length - 2];
+    if (parentId) return realNav.state.pathMap.get(parentId) ?? realNav.state.rootPath;
+    return realNav.state.rootPath;
+  }, [tree, nav.selection, realNav.state]);
+
   const handleRenameOpen = useCallback(() => {
     if (!isTauriReady) return;
     const lastId = nav.selection[nav.selection.length - 1];
@@ -384,6 +399,13 @@ function App() {
     setPrompt({ kind: "rename", sourcePath: diskPath, initialName: node.name });
   }, [isTauriReady, nav.selection, realNav.state, tree]);
 
+  const handleNewFolderOpen = useCallback(() => {
+    if (!isTauriReady) return;
+    const parent = currentParentDir();
+    if (!parent) return;
+    setPrompt({ kind: "new-folder", parentDir: parent });
+  }, [isTauriReady, currentParentDir]);
+
   const handlePromptSubmit = useCallback(async (value: string) => {
     if (!prompt) return;
     setPrompt(null);
@@ -392,6 +414,9 @@ function App() {
       if (prompt.kind === "rename") {
         await invoke("rename_path", { path: prompt.sourcePath, newName: value });
         showToast(`Renamed to "${value}"`);
+      } else if (prompt.kind === "new-folder") {
+        await invoke("create_dir", { parent: prompt.parentDir, name: value });
+        showToast(`Created "${value}"`);
       }
       if (realNav.refreshCurrentDir) realNav.refreshCurrentDir();
     } catch (err) {
@@ -454,6 +479,7 @@ function App() {
     },
     onTogglePreview: () => handleSetPreviewOpen(!previewOpen),
     onRename: handleRenameOpen,
+    onNewFolder: handleNewFolderOpen,
     vimNavigation,
   });
 

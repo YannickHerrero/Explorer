@@ -26,6 +26,7 @@ interface KeyboardNavOptions {
   onToggleHidden: () => void;
   onTogglePreview: () => void;
   onRename: () => void;
+  onNewFolder: () => void;
   vimNavigation: boolean;
 }
 
@@ -60,6 +61,7 @@ export function useKeyboardNav(opts: KeyboardNavOptions) {
         onToggleHidden,
         onTogglePreview,
         onRename,
+        onNewFolder,
         vimNavigation,
       } = ref.current;
 
@@ -88,6 +90,12 @@ export function useKeyboardNav(opts: KeyboardNavOptions) {
       if (!meta && !e.altKey && e.shiftKey && e.key === "L") {
         e.preventDefault();
         onToggleHidden();
+        return;
+      }
+
+      if (meta && e.shiftKey && e.key.toLowerCase() === "n") {
+        e.preventDefault();
+        onNewFolder();
         return;
       }
 
