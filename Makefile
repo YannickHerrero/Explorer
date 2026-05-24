@@ -15,7 +15,7 @@ WIN_USER := $(shell cmd.exe /c 'echo %USERNAME%' 2>/dev/null | tr -d '\r\n')
 endif
 DEST_DIR := /mnt/c/Users/$(WIN_USER)/Documents/apps
 
-.PHONY: default build install kill clean
+.PHONY: default build install kill clean deploy
 default: install
 
 build:
@@ -37,3 +37,6 @@ install: build kill
 clean:
 	cargo clean --manifest-path src-tauri/Cargo.toml
 	rm -rf dist
+
+deploy:
+	@./scripts/deploy.sh $(BUMP)
