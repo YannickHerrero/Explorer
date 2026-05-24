@@ -33,7 +33,7 @@ export function ContextMenu({ x, y, onClose, onRun, isFolder, isSidebar, isPinne
     // Sidebar items get a simplified context menu
     sections.push([
       { id: "open", name: "Open", kbd: ["Ctrl", "Enter"], icon: "folder-open" },
-      { id: "term", name: "Open in Terminal", kbd: ["Ctrl", "'"], icon: "terminal" },
+      { id: "term", name: "Open in Terminal", kbd: ["Ctrl", "`"], icon: "terminal" },
     ]);
     if (onTogglePin) {
       sections.push([
@@ -48,7 +48,7 @@ export function ContextMenu({ x, y, onClose, onRun, isFolder, isSidebar, isPinne
     sections.push([
       { id: "open", name: "Open", kbd: ["Ctrl", "Enter"], icon: "folder-open" },
       { id: "ql", name: "Quick Look", kbd: ["Space"], icon: "eye" },
-      { id: "term", name: "Open in Terminal", kbd: ["Ctrl", "'"], icon: "terminal" },
+      { id: "term", name: "Open in Terminal", kbd: ["Ctrl", "`"], icon: "terminal" },
     ]);
 
     if (isFolder && onTogglePin) {
