@@ -141,7 +141,7 @@ function FilePreview({ node, diskPath, onOpen, fileTags }: { node: FileNode; dis
         ) : isImage ? (
           <Thumb label={`image \u2014 ${node.dims || "preview"}`} h={220} tone={node.preview} />
         ) : node.kind === "pdf" ? (
-          <DocumentPreview node={node} />
+          <PdfPreview diskPath={diskPath} />
         ) : node.kind === "text" || node.kind === "code" ? (
           <TextPreview node={node} diskPath={diskPath} />
         ) : node.kind === "audio" ? (
@@ -380,57 +380,38 @@ function Thumb({ label, h, tone }: { label: string; h: number; tone?: string }) 
   );
 }
 
-function DocumentPreview({ node }: { node: FileNode }) {
-  return (
-    <div
-      style={{
-        height: 220,
-        background: "var(--paper)",
-        border: "1px solid var(--line)",
-        borderRadius: 4,
-        padding: 16,
-        overflow: "hidden",
-        position: "relative",
-      }}
-    >
+function PdfPreview({ diskPath }: { diskPath?: string }) {
+  const url = useAssetUrl(diskPath);
+  if (!url) {
+    return (
       <div
         style={{
-          fontFamily: "var(--font-serif)",
-          fontSize: 13,
-          fontWeight: 600,
-          color: "var(--ink)",
-          marginBottom: 6,
-          letterSpacing: -0.2,
-        }}
-      >
-        {node.name.replace(/\.(pdf|md|txt)$/, "")}
-      </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-        {[100, 92, 96, 88, 100, 84, 95, 70, 100, 90, 60].map((w, i) => (
-          <div
-            key={i}
-            style={{
-              height: 3,
-              width: `${w}%`,
-              background: "var(--line)",
-              borderRadius: 1,
-            }}
-          />
-        ))}
-      </div>
-      <div
-        style={{
-          position: "absolute",
-          bottom: 8,
-          right: 10,
-          fontFamily: "var(--font-mono)",
-          fontSize: 9,
+          height: 320,
+          background: "var(--paper-deep)",
+          border: "1px solid var(--line)",
+          borderRadius: 4,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
           color: "var(--muted)",
         }}
       >
-        1 / 12
+        <Icon name="file" size={56} strokeWidth={1} />
       </div>
-    </div>
+    );
+  }
+  return (
+    <iframe
+      src={url}
+      title="PDF preview"
+      style={{
+        width: "100%",
+        height: 360,
+        border: "1px solid var(--line)",
+        borderRadius: 4,
+        background: "var(--paper)",
+      }}
+    />
   );
 }
 
