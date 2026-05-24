@@ -44,9 +44,6 @@ export const SHORTCUTS: ShortcutGroup[] = [
   {
     group: "Selection",
     items: [
-      { keys: ["Ctrl", "A"], desc: "Select all" },
-      { keys: ["Shift", "↑↓"], desc: "Extend selection" },
-      { keys: ["Ctrl", "Click"], desc: "Multi-select" },
       { keys: ["Space"], desc: "Quick Look" },
     ],
   },
@@ -58,7 +55,6 @@ export const SHORTCUTS: ShortcutGroup[] = [
       { keys: ["Ctrl", "Del"], desc: "Move to Trash" },
       { keys: ["Ctrl", "C"], desc: "Copy" },
       { keys: ["Ctrl", "V"], desc: "Paste" },
-      { keys: ["Ctrl", "Alt", "V"], desc: "Move here" },
       { keys: ["Ctrl", "D"], desc: "Duplicate" },
       { keys: ["Ctrl", "T"], desc: "Add tag" },
     ],
@@ -68,8 +64,6 @@ export const SHORTCUTS: ShortcutGroup[] = [
     items: [
       { keys: ["Ctrl", "K"], desc: "Command palette" },
       { keys: ["Ctrl", "F"], desc: "Search current folder" },
-      { keys: ["Ctrl", "Shift", "F"], desc: "Search everywhere" },
-      { keys: ["/"], desc: "Quick find" },
       { keys: ["Esc"], desc: "Dismiss" },
     ],
   },
