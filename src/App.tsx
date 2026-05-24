@@ -317,6 +317,8 @@ function App() {
       handleOpenInEditor();
     } else if (cmd.id === "c-open-terminal") {
       handleOpenInTerminal();
+    } else if (cmd.id === "c-reveal") {
+      handleReveal();
     } else {
       showToast(cmd.name);
     }
@@ -442,6 +444,19 @@ function App() {
     }
   }, [isTauriReady, nav.selection, realNav.state]);
 
+  const handleReveal = useCallback(async () => {
+    if (!isTauriReady) return;
+    const lastId = nav.selection[nav.selection.length - 1];
+    const diskPath = realNav.state?.pathMap.get(lastId);
+    if (!diskPath) return;
+    try {
+      const { revealItemInDir } = await import("@tauri-apps/plugin-opener");
+      await revealItemInDir(diskPath);
+    } catch (err) {
+      showToast(`Reveal failed: ${err}`);
+    }
+  }, [isTauriReady, nav.selection, realNav.state]);
+
   const handleOpenInTerminal = useCallback(async (overrideDir?: string) => {
     if (!isTauriReady) return;
     let dir = overrideDir;
@@ -564,6 +579,7 @@ function App() {
     onDuplicate: handleDuplicate,
     onOpenInEditor: handleOpenInEditor,
     onOpenInTerminal: () => handleOpenInTerminal(),
+    onReveal: handleReveal,
     vimNavigation,
   });
 
