@@ -444,6 +444,25 @@ function App() {
     }
   }, [isTauriReady, nav.selection, realNav.state]);
 
+  const handleDropFiles = useCallback(async (sourcePath: string, destDir: string, mode: "move" | "copy") => {
+    if (!sourcePath || !destDir) return;
+    if (sourcePath === destDir) return;
+    try {
+      const { invoke } = await import("@tauri-apps/api/core");
+      const destName = destDir.split(/[/\\]/).filter(Boolean).pop() || destDir;
+      if (mode === "copy") {
+        await invoke("copy_path", { source: sourcePath, destDir });
+        showToast(`Copied to "${destName}"`);
+      } else {
+        await invoke("move_path", { source: sourcePath, destDir });
+        showToast(`Moved to "${destName}"`);
+      }
+      if (realNav.refreshCurrentDir) realNav.refreshCurrentDir();
+    } catch (err) {
+      showToast(`Drop failed: ${err}`);
+    }
+  }, [realNav]);
+
   const handleReveal = useCallback(async () => {
     if (!isTauriReady) return;
     const lastId = nav.selection[nav.selection.length - 1];
@@ -751,6 +770,7 @@ function App() {
               onNavigate={handleSidebarNav}
               density={density}
               sections={realSidebar ?? []}
+              onDropOnItem={handleDropFiles}
             />
           )}
           <Columns
@@ -767,22 +787,9 @@ function App() {
             previewOpen={previewOpen}
             shouldShowRow={shouldShowRow}
             getSourcePath={(id) => realNav.state?.pathMap.get(id) ?? null}
-            onDropOnFolder={async (src, destFolderId, mode) => {
+            onDropOnFolder={(src, destFolderId, mode) => {
               const destDir = realNav.state?.pathMap.get(destFolderId);
-              if (!destDir || src === destDir) return;
-              try {
-                const { invoke } = await import("@tauri-apps/api/core");
-                if (mode === "copy") {
-                  await invoke("copy_path", { source: src, destDir });
-                  showToast(`Copied to "${destDir.split(/[/\\]/).pop()}"`);
-                } else {
-                  await invoke("move_path", { source: src, destDir });
-                  showToast(`Moved to "${destDir.split(/[/\\]/).pop()}"`);
-                }
-                if (realNav.refreshCurrentDir) realNav.refreshCurrentDir();
-              } catch (err) {
-                showToast(`Drop failed: ${err}`);
-              }
+              if (destDir) handleDropFiles(src, destDir, mode);
             }}
           />
         </div>

@@ -1,5 +1,6 @@
-import { memo } from "react";
+import { memo, useState } from "react";
 import { Icon } from "@/icons/Icon";
+import { EXPLORER_DRAG_MIME } from "@/components/Columns";
 import type { SidebarSection, SidebarItem, DensityTokens } from "@/types";
 
 interface SidebarProps {
@@ -8,9 +9,10 @@ interface SidebarProps {
   onNavigate: (item: SidebarItem) => void;
   density: DensityTokens;
   sections: SidebarSection[];
+  onDropOnItem?: (sourcePath: string, destDir: string, mode: "move" | "copy") => void;
 }
 
-export function Sidebar({ width, activeId, onNavigate, density, sections }: SidebarProps) {
+export function Sidebar({ width, activeId, onNavigate, density, sections, onDropOnItem }: SidebarProps) {
   const data = sections;
   return (
     <div
@@ -47,6 +49,7 @@ export function Sidebar({ width, activeId, onNavigate, density, sections }: Side
               active={activeId === item.id}
               onClick={() => onNavigate(item)}
               density={density}
+              onDropOnItem={onDropOnItem}
             />
           ))}
         </div>
@@ -62,18 +65,40 @@ function SidebarRow({
   active,
   onClick,
   density,
+  onDropOnItem,
 }: {
   item: SidebarItem;
   active: boolean;
   onClick: () => void;
   density: DensityTokens;
+  onDropOnItem?: (sourcePath: string, destDir: string, mode: "move" | "copy") => void;
 }) {
+  const acceptsDrop = !!item.diskPath && !!onDropOnItem;
+  const [dropActive, setDropActive] = useState(false);
+  const bg = dropActive ? "var(--paper-deep)" : active ? "var(--accent)" : "transparent";
+  const border = dropActive ? "1px dashed var(--accent)" : "1px solid transparent";
   return (
     <div
       onClick={onClick}
       className="sidebar-item"
       data-sidebar-id={item.id}
       data-disk-path={item.diskPath || ""}
+      onDragOver={(e) => {
+        if (!acceptsDrop) return;
+        if (!e.dataTransfer.types.includes(EXPLORER_DRAG_MIME)) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = e.ctrlKey || e.metaKey ? "copy" : "move";
+        setDropActive(true);
+      }}
+      onDragLeave={() => setDropActive(false)}
+      onDrop={(e) => {
+        if (!acceptsDrop) return;
+        setDropActive(false);
+        const src = e.dataTransfer.getData(EXPLORER_DRAG_MIME);
+        if (!src || !item.diskPath) return;
+        e.preventDefault();
+        onDropOnItem!(src, item.diskPath, e.ctrlKey || e.metaKey ? "copy" : "move");
+      }}
       style={{
         display: "flex",
         alignItems: "center",
@@ -82,12 +107,14 @@ function SidebarRow({
         margin: `1px ${density.rowPad - 2}px`,
         padding: "0 8px",
         borderRadius: 5,
-        background: active ? "var(--accent)" : "transparent",
+        background: bg,
         color: active ? "var(--paper)" : "var(--ink-soft)",
         cursor: "pointer",
         fontFamily: "var(--font-sans)",
         fontSize: density.fontBody - 0.5,
         fontWeight: active ? 500 : 400,
+        border,
+        boxSizing: "border-box",
       }}
     >
       <span
