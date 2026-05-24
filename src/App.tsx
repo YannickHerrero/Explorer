@@ -132,7 +132,7 @@ function App() {
   const [densityKey, setDensityKey] = useState<DensityKey>("comfortable");
   const density = DENSITY[densityKey];
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [showHidden] = useState(false);
+  const [showHidden, setShowHidden] = useState(false);
   const [hideTitlebar, setHideTitlebar] = useState(true);
 
   // Apply init data once it arrives
@@ -143,6 +143,7 @@ function App() {
     setDensityKey(initData.config.density);
     setSidebarOpen(initData.config.sidebar_open);
     setHideTitlebar(initData.config.hide_titlebar);
+    setShowHidden(initData.config.show_hidden);
     setInitApplied(true);
   }, [initData, initApplied, setThemeKey]);
 
@@ -153,7 +154,8 @@ function App() {
     setDensityKey(config.density);
     setSidebarOpen(config.sidebar_open);
     setHideTitlebar(config.hide_titlebar);
-  }, [config.theme, config.density, config.sidebar_open, config.hide_titlebar, setThemeKey, initApplied]);
+    setShowHidden(config.show_hidden);
+  }, [config.theme, config.density, config.sidebar_open, config.hide_titlebar, config.show_hidden, setThemeKey, initApplied]);
 
   // Apply decorations
   useEffect(() => {
@@ -182,6 +184,11 @@ function App() {
   const handleSetHideTitlebar = useCallback((v: boolean) => {
     setHideTitlebar(v);
     updateConfig({ hide_titlebar: v });
+  }, [updateConfig]);
+
+  const handleSetShowHidden = useCallback((v: boolean) => {
+    setShowHidden(v);
+    updateConfig({ show_hidden: v });
   }, [updateConfig]);
 
   // Navigation
@@ -308,6 +315,9 @@ function App() {
       setCheatsheetOpen(true);
     } else if (cmd.id === "c-toggle-sidebar") {
       handleSetSidebarOpen(!sidebarOpen);
+    } else if (cmd.id === "c-hidden") {
+      handleSetShowHidden(!showHidden);
+      showToast(showHidden ? "Hidden files: off" : "Hidden files: on");
     } else if (cmd.id === "c-copy") {
       handleCopy();
     } else if (cmd.id === "c-cut") {
