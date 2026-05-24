@@ -76,10 +76,6 @@ export const SHORTCUTS: ShortcutGroup[] = [
   {
     group: "View",
     items: [
-      { keys: ["Ctrl", "1"], desc: "Icon view" },
-      { keys: ["Ctrl", "2"], desc: "List view" },
-      { keys: ["Ctrl", "3"], desc: "Column view" },
-      { keys: ["Ctrl", "4"], desc: "Gallery view" },
       { keys: ["Alt", "Ctrl", "S"], desc: "Toggle sidebar" },
       { keys: ["Shift", "Ctrl", "P"], desc: "Toggle preview" },
       { keys: ["Shift", "L"], desc: "Show hidden" },
@@ -90,8 +86,6 @@ export const SHORTCUTS: ShortcutGroup[] = [
     items: [
       { keys: ["Ctrl", ","], desc: "Settings" },
       { keys: ["Ctrl", "/"], desc: "This cheatsheet" },
-      { keys: ["Ctrl", "N"], desc: "New window" },
-      { keys: ["Ctrl", "W"], desc: "Close window" },
     ],
   },
 ];
