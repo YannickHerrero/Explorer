@@ -520,6 +520,28 @@ pub fn trash_path(path: String) -> Result<(), String> {
     Ok(())
 }
 
+#[derive(Debug, Serialize)]
+pub struct FileHead {
+    pub content: String,
+    pub truncated: bool,
+}
+
+#[tauri::command]
+pub fn read_file_head(path: String, max_bytes: usize) -> Result<FileHead, String> {
+    use std::io::Read;
+    let mut f = fs::File::open(&path).map_err(|e| format!("Open failed: {}", e))?;
+    let mut buf = vec![0u8; max_bytes];
+    let n = f.read(&mut buf).map_err(|e| format!("Read failed: {}", e))?;
+    buf.truncate(n);
+
+    // Peek one more byte to know if file is larger.
+    let mut peek = [0u8; 1];
+    let truncated = f.read(&mut peek).map(|m| m > 0).unwrap_or(false);
+
+    let content = String::from_utf8_lossy(&buf).to_string();
+    Ok(FileHead { content, truncated })
+}
+
 #[tauri::command]
 pub fn open_in_editor(path: String) -> Result<(), String> {
     Command::new("notepad.exe")

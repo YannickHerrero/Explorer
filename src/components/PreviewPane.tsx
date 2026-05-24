@@ -143,7 +143,7 @@ function FilePreview({ node, diskPath, onOpen, fileTags }: { node: FileNode; dis
         ) : node.kind === "pdf" ? (
           <DocumentPreview node={node} />
         ) : node.kind === "text" || node.kind === "code" ? (
-          <TextPreview node={node} />
+          <TextPreview node={node} diskPath={diskPath} />
         ) : node.kind === "audio" ? (
           <AudioPreview node={node} />
         ) : (
@@ -432,49 +432,81 @@ function DocumentPreview({ node }: { node: FileNode }) {
   );
 }
 
-function TextPreview({ node }: { node: FileNode }) {
+function TextPreview({ node, diskPath }: { node: FileNode; diskPath?: string }) {
   const isCode = node.kind === "code";
-  const lines = isCode
-    ? [
-        "import { useState } from 'react';",
-        "",
-        "export const useSelection = () => {",
-        "  const [sel, setSel] = useState([]);",
-        "  const navigate = (i, id) => {",
-        "    setSel(s => [...s.slice(0, i+1), id]);",
-        "  };",
-        "  return { sel, navigate };",
-        "};",
-      ]
-    : [
-        "Field notes \u2014 April",
-        "",
-        "The studio smelled of cedar. Morning light",
-        "pooled on the desk where I had left the",
-        "sketches overnight, curled at the edges",
-        "like a page remembering its book.",
-        "",
-        "Something about slow software \u2014",
-        "the pleasure of a tool that waits.",
-      ];
+  const [content, setContent] = useState<string | null>(null);
+  const [truncated, setTruncated] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!diskPath || !IS_TAURI) {
+      setContent(null);
+      setError(null);
+      return;
+    }
+    let cancelled = false;
+    setContent(null);
+    setError(null);
+    (async () => {
+      try {
+        const { invoke } = await import("@tauri-apps/api/core");
+        const head = await invoke<{ content: string; truncated: boolean }>("read_file_head", {
+          path: diskPath,
+          maxBytes: 64 * 1024,
+        });
+        if (cancelled) return;
+        setContent(head.content);
+        setTruncated(head.truncated);
+      } catch (e) {
+        if (cancelled) return;
+        setError(String(e));
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [diskPath]);
 
   return (
     <div
       style={{
-        height: 220,
+        height: 260,
         background: "var(--paper)",
         border: "1px solid var(--line)",
         borderRadius: 4,
-        padding: "14px 16px",
-        fontFamily: isCode ? "var(--font-mono)" : "var(--font-serif)",
-        fontSize: isCode ? 11 : 12.5,
-        lineHeight: 1.55,
-        color: "var(--ink)",
+        display: "flex",
+        flexDirection: "column",
         overflow: "hidden",
-        whiteSpace: "pre-wrap",
       }}
     >
-      {lines.join("\n")}
+      <pre
+        style={{
+          flex: 1,
+          margin: 0,
+          padding: "12px 14px",
+          fontFamily: isCode ? "var(--font-mono)" : "var(--font-serif)",
+          fontSize: isCode ? 11 : 12.5,
+          lineHeight: 1.55,
+          color: "var(--ink)",
+          overflow: "auto",
+          whiteSpace: "pre-wrap",
+          wordBreak: "break-word",
+        }}
+      >
+        {error ? `(${error})` : content ?? "Loading\u2026"}
+      </pre>
+      {truncated && (
+        <div
+          style={{
+            padding: "4px 10px",
+            borderTop: "1px solid var(--line)",
+            background: "var(--paper-deep)",
+            fontFamily: "var(--font-mono)",
+            fontSize: 10,
+            color: "var(--muted)",
+          }}
+        >
+          Truncated \u00b7 showing first 64 KB
+        </div>
+      )}
     </div>
   );
 }
