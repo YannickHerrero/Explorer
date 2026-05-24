@@ -1,7 +1,5 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Icon, kindIcon, Kbd } from "@/icons/Icon";
-import { fuzzyFilter } from "@/utils/fuzzy";
-import { TREE } from "@/data";
 import type { FileNode } from "@/types";
 
 interface SearchOverlayProps {
@@ -30,27 +28,8 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
     modified: "any",
   });
 
-  const allFiles = useMemo(() => {
-    if (!open) return [];
-    const out: FlatFile[] = [];
-    const walk = (node: FileNode, path: string[]) => {
-      const p = [...path, node.name];
-      if (node.kind !== "folder") {
-        out.push({ ...node, path: p.slice(1, -1).join(" / ") || "~" });
-      }
-      (node.children || []).forEach((c) => walk(c, p));
-    };
-    walk(TREE, []);
-    return out;
-  }, [open]);
-
-  const results = useMemo(() => {
-    if (!open) return [];
-    let r = allFiles;
-    if (filters.kind !== "all") r = r.filter((f) => f.kind === filters.kind);
-    r = fuzzyFilter(r, q, (f) => f.name);
-    return r.slice(0, 40);
-  }, [q, filters, allFiles]);
+  // Search backend is not yet wired — see Phase 3 of the completion plan.
+  const results: FlatFile[] = [];
 
   if (!open) return null;
 

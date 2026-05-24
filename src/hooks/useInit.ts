@@ -68,8 +68,9 @@ export interface InitData {
   drives: RawInitData["drives"];
 }
 
-export function useInit(): InitData | null {
+export function useInit(): { data: InitData | null; error: string | null } {
   const [data, setData] = useState<InitData | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -105,10 +106,11 @@ export function useInit(): InitData | null {
         });
       } catch (e) {
         console.error("Failed to load init data:", e);
+        if (!cancelled) setError(String(e));
       }
     })();
     return () => { cancelled = true; };
   }, []);
 
-  return data;
+  return { data, error };
 }

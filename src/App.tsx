@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { Chrome } from "@/components/Chrome";
-import { Sidebar, SIDEBAR_DATA } from "@/components/Sidebar";
+import { Sidebar } from "@/components/Sidebar";
 import { Columns } from "@/components/Columns";
 import { StatusBar } from "@/components/StatusBar";
 import { CommandPalette } from "@/overlays/CommandPalette";
@@ -16,42 +16,11 @@ import { useRealFileTree } from "@/hooks/useRealFileTree";
 import { useInit } from "@/hooks/useInit";
 import { useConfig } from "@/hooks/useConfig";
 import { DENSITY } from "@/themes/tokens";
-import { TREE, resolveSelection, buildPathNames } from "@/data";
+import { resolveSelection, buildPathNames } from "@/data";
 import { THEMES } from "@/themes";
 import type { DensityKey, SidebarItem, SidebarSection, FileNode, ThemeKey, Command } from "@/types";
 
 const IS_TAURI = "__TAURI_INTERNALS__" in window;
-
-// ── Mock-mode navigation (used when running outside Tauri) ──────────
-function useMockNav() {
-  const [selection, setSelection] = useState(["root", "projects", "explorer", "src", "s1"]);
-  const [focusedCol, setFocusedCol] = useState(3);
-  const [history, setHistory] = useState([["root", "projects", "explorer", "src", "s1"]]);
-  const [histIdx, setHistIdx] = useState(0);
-
-  const navigateTo = useCallback((newSel: string[], focused?: number) => {
-    setSelection(newSel);
-    if (focused !== undefined) setFocusedCol(focused);
-    setHistory((h) => [...h.slice(0, histIdx + 1), newSel]);
-    setHistIdx((i) => i + 1);
-  }, [histIdx]);
-
-  const goBack = useCallback(() => {
-    if (histIdx > 0) {
-      setHistIdx((i) => i - 1);
-      setSelection(history[histIdx - 1]);
-    }
-  }, [histIdx, history]);
-
-  const goFwd = useCallback(() => {
-    if (histIdx < history.length - 1) {
-      setHistIdx((i) => i + 1);
-      setSelection(history[histIdx + 1]);
-    }
-  }, [histIdx, history]);
-
-  return { selection, focusedCol, setFocusedCol, navigateTo, goBack, goFwd, histIdx, historyLength: history.length };
-}
 
 // Build sidebar sections from init data
 function buildSidebarSections(
@@ -118,16 +87,13 @@ function buildSidebarSections(
 // ── App ─────────────────────────────────────────────────────────────
 function App() {
   // Single batched init call for Tauri mode
-  const initData = useInit();
+  const { data: initData, error: initError } = useInit();
 
   // Config (for saving changes — init provides the initial read)
   const { config, updateConfig, pinFolder, unpinFolder, isPinned, addTag, removeTag, updateTag, tagFile, untagFile, getFileTags } = useConfig();
 
-  // Determine if init is done
-  const tauriReady = IS_TAURI && initData !== null;
-
-  // Theme — use init data for initial value, config for ongoing changes
-  const initialTheme = (tauriReady ? initData.config.theme : config.theme) as ThemeKey;
+  // Theme — config provides the initial value; init data syncs it once loaded
+  const initialTheme = config.theme as ThemeKey;
   const { themeKey, setThemeKey } = useTheme(initialTheme);
   const [densityKey, setDensityKey] = useState<DensityKey>("comfortable");
   const density = DENSITY[densityKey];
@@ -201,20 +167,11 @@ function App() {
 
   // Navigation
   const realNav = useRealFileTree(showHidden);
-  const mockNav = useMockNav();
-
-  // Seed realNav with init data (avoids duplicate home dir read)
-  useEffect(() => {
-    if (!initData || realNav.state) return;
-    // The useRealFileTree hook will load on its own, but initData already has the data.
-    // We can't easily inject — the hook handles its own state. The batched init
-    // still saves IPC calls for config/sidebar/wsl/drives. The home dir read_dir
-    // happens in parallel in the Rust side via get_init_data.
-  }, [initData, realNav.state]);
-
-  const isTauriReady = IS_TAURI && realNav.state !== null;
-  const nav = isTauriReady ? realNav : mockNav;
-  const tree: FileNode = isTauriReady ? realNav.state!.rootNode : TREE;
+  const nav = realNav;
+  const isTauriReady = realNav.state !== null;
+  // Placeholder used only during the brief moment before realNav.state loads;
+  // the early-return below replaces the whole render with LoadingSkeleton or ErrorScreen.
+  const tree: FileNode = realNav.state?.rootNode ?? { id: "root", name: "", kind: "folder", children: [] };
 
   // Sidebar from init data (synchronous — no extra async call)
   const realSidebar = useMemo(() => {
@@ -292,23 +249,8 @@ function App() {
   };
 
   const handleSidebarNav = (item: SidebarItem) => {
-    if (isTauriReady && item.diskPath) {
+    if (item.diskPath) {
       realNav.navigateToPath(item.diskPath);
-      return;
-    }
-    if (item.targetPath) {
-      const ids = ["root"];
-      let node = tree;
-      for (let i = 1; i < item.targetPath.length; i++) {
-        const name = item.targetPath[i];
-        const child = (node.children || []).find((c) => c.name === name);
-        if (!child) break;
-        ids.push(child.id);
-        node = child;
-      }
-      const first = node.children?.[0];
-      if (first) ids.push(first.id);
-      nav.navigateTo(ids, ids.length - 2);
     }
   };
 
@@ -473,20 +415,13 @@ function App() {
   const currentNode = useMemo(() => resolveSelection(tree, nav.selection), [tree, nav.selection]);
 
   const activeSidebarId = useMemo(() => {
-    if (isTauriReady && realSidebar) {
-      const rootPath = realNav.state!.rootPath;
-      const match = realSidebar
-        .flatMap((s) => s.items)
-        .find((i) => i.diskPath === rootPath);
-      if (match) return match.id;
-      return "home";
-    }
-    if (nav.selection[1]) {
-      const match = SIDEBAR_DATA.flatMap((s) => s.items).find((i) => i.id === nav.selection[1]);
-      if (match) return match.id;
-    }
-    return "home";
-  }, [nav.selection, isTauriReady, realSidebar, realNav.state]);
+    if (!realSidebar || !realNav.state) return "home";
+    const rootPath = realNav.state.rootPath;
+    const match = realSidebar
+      .flatMap((s) => s.items)
+      .find((i) => i.diskPath === rootPath);
+    return match?.id ?? "home";
+  }, [realSidebar, realNav.state]);
 
   const contextNode = useMemo(() => {
     if (!contextMenu) return null;
@@ -509,8 +444,15 @@ function App() {
     return getFileTags(selectedDiskPath);
   }, [selectedDiskPath, getFileTags]);
 
-  // Show skeleton while loading in Tauri mode
-  if (IS_TAURI && !isTauriReady) {
+  // Hard-fail if we're not running inside Tauri or if init failed.
+  if (!IS_TAURI) {
+    return <ErrorScreen title="This app must run inside Tauri" detail="The web preview is not supported; open the desktop app." />;
+  }
+  if (initError) {
+    return <ErrorScreen title="Failed to start" detail={initError} />;
+  }
+  // Show skeleton while loading
+  if (!isTauriReady) {
     return <LoadingSkeleton />;
   }
 
@@ -568,7 +510,7 @@ function App() {
               activeId={activeSidebarId}
               onNavigate={handleSidebarNav}
               density={density}
-              sections={isTauriReady && realSidebar ? realSidebar : undefined}
+              sections={realSidebar ?? []}
             />
           )}
           <Columns
@@ -593,7 +535,7 @@ function App() {
           open={folderPaletteOpen}
           onClose={() => setFolderPaletteOpen(false)}
           onNavigate={handleSidebarNav}
-          sections={isTauriReady && realSidebar ? realSidebar : SIDEBAR_DATA}
+          sections={realSidebar ?? []}
         />
         <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
         <TagPicker
@@ -732,6 +674,34 @@ function LoadingSkeleton() {
 function SkeletonBar({ w, h }: { w: number; h: number }) {
   return (
     <div style={{ width: w, height: h, borderRadius: h / 2, background: "var(--paper-deep)", opacity: 0.6 }} />
+  );
+}
+
+function ErrorScreen({ title, detail }: { title: string; detail?: string }) {
+  return (
+    <div
+      style={{
+        width: "100%",
+        height: "100%",
+        background: "var(--paper)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontFamily: "var(--font-sans)",
+        padding: 24,
+      }}
+    >
+      <div style={{ maxWidth: 460, textAlign: "center" }}>
+        <div style={{ fontFamily: "var(--font-serif)", fontSize: 22, color: "var(--ink)", fontWeight: 500, marginBottom: 8 }}>
+          {title}
+        </div>
+        {detail && (
+          <div style={{ fontSize: 12, color: "var(--muted)", fontFamily: "var(--font-mono)", whiteSpace: "pre-wrap" }}>
+            {detail}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 

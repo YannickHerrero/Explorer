@@ -2,67 +2,16 @@ import { memo } from "react";
 import { Icon } from "@/icons/Icon";
 import type { SidebarSection, SidebarItem, DensityTokens } from "@/types";
 
-export const SIDEBAR_DATA: SidebarSection[] = [
-  {
-    label: "Favorites",
-    items: [
-      { id: "home", name: "maya", icon: "home", targetPath: ["maya"] },
-      { id: "desktop", name: "Desktop", icon: "desktop", targetPath: ["maya", "Desktop"] },
-      { id: "documents", name: "Documents", icon: "folder", targetPath: ["maya", "Documents"] },
-      { id: "projects", name: "Projects", icon: "folder", targetPath: ["maya", "Projects"], badge: "12" },
-      { id: "pictures", name: "Pictures", icon: "folder", targetPath: ["maya", "Pictures"] },
-      { id: "downloads", name: "Downloads", icon: "folder", targetPath: ["maya", "Downloads"], badge: "4" },
-    ],
-  },
-  {
-    label: "iCloud",
-    items: [
-      { id: "icd", name: "iCloud Drive", icon: "cloud", targetPath: ["maya", "Documents"] },
-      { id: "shared", name: "Shared", icon: "share", targetPath: ["maya", "Documents"] },
-    ],
-  },
-  {
-    label: "Cloud",
-    items: [
-      { id: "dbx", name: "Dropbox", icon: "dropbox", targetPath: ["maya", "Documents"] },
-      { id: "gdr", name: "Google Drive", icon: "gdrive", targetPath: ["maya", "Documents"] },
-    ],
-  },
-  {
-    label: "Devices",
-    items: [
-      { id: "mac", name: "Maya's MacBook", icon: "laptop", targetPath: ["maya"] },
-      { id: "ssd", name: "Samsung T7", icon: "drive", targetPath: ["maya"], badge: "1.2TB" },
-      { id: "usb", name: "SCRATCH", icon: "usb", targetPath: ["maya"] },
-    ],
-  },
-  {
-    label: "Tags",
-    items: [
-      { id: "t-red", name: "Urgent", icon: "tag", color: "#C44536" },
-      { id: "t-org", name: "Review", icon: "tag", color: "#D97706" },
-      { id: "t-grn", name: "Done", icon: "tag", color: "#3F6B3A" },
-      { id: "t-blu", name: "Reference", icon: "tag", color: "#4A6B8A" },
-    ],
-  },
-  {
-    label: "",
-    items: [
-      { id: "trash", name: "Trash", icon: "trash", targetPath: ["maya"], badge: "23" },
-    ],
-  },
-];
-
 interface SidebarProps {
   width: number;
   activeId: string;
   onNavigate: (item: SidebarItem) => void;
   density: DensityTokens;
-  sections?: SidebarSection[];
+  sections: SidebarSection[];
 }
 
 export function Sidebar({ width, activeId, onNavigate, density, sections }: SidebarProps) {
-  const data = sections || SIDEBAR_DATA;
+  const data = sections;
   return (
     <div
       style={{
