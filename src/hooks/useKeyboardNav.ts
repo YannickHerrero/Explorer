@@ -98,13 +98,13 @@ export function useKeyboardNav(opts: KeyboardNavOptions) {
         return;
       }
 
-      if (overlaysOpen) return;
-
-      if (!meta && !e.altKey && e.shiftKey && e.key === "L") {
+      if (meta && !e.shiftKey && !e.altKey && e.key.toLowerCase() === "h") {
         e.preventDefault();
         onToggleHidden();
         return;
       }
+
+      if (overlaysOpen) return;
 
       if (meta && e.shiftKey && e.key.toLowerCase() === "n") {
         e.preventDefault();

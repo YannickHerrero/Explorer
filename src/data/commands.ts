@@ -17,7 +17,7 @@ export const COMMANDS: Command[] = [
   { id: "c-quick-look", name: "Quick Look", group: "View", shortcut: ["Space"], icon: "eye" },
   { id: "c-toggle-sidebar", name: "Toggle Sidebar", group: "View", shortcut: ["Ctrl", "B"], icon: "sidebar" },
   { id: "c-toggle-preview", name: "Toggle Preview", group: "View", shortcut: ["Shift", "Ctrl", "P"], icon: "panel" },
-  { id: "c-hidden", name: "Show Hidden Files", group: "View", shortcut: ["Shift", "L"], icon: "eye" },
+  { id: "c-hidden", name: "Show Hidden Files", group: "View", shortcut: ["Ctrl", "H"], icon: "eye" },
   { id: "c-settings", name: "Open Settings", group: "App", shortcut: ["Ctrl", ","], icon: "settings" },
   { id: "c-shortcuts", name: "Keyboard Shortcuts", group: "App", shortcut: ["Ctrl", "/"], icon: "keyboard" },
   { id: "c-theme-sage", name: "Theme: Sage", group: "Theme", icon: "swatch" },
@@ -74,7 +74,7 @@ export const SHORTCUTS: ShortcutGroup[] = [
     items: [
       { keys: ["Ctrl", "B"], desc: "Toggle sidebar" },
       { keys: ["Shift", "Ctrl", "P"], desc: "Toggle preview" },
-      { keys: ["Shift", "L"], desc: "Show hidden" },
+      { keys: ["Ctrl", "H"], desc: "Show hidden" },
     ],
   },
   {
