@@ -418,6 +418,78 @@ pub fn create_dir(parent: String, name: String) -> Result<String, String> {
     Ok(dest.to_string_lossy().to_string())
 }
 
+#[derive(Debug, Serialize)]
+pub struct SearchHit {
+    pub id: String,
+    pub name: String,
+    pub kind: String,
+    pub path: String,
+    pub parent_dir: String,
+    pub modified: Option<String>,
+    pub is_dir: bool,
+}
+
+#[tauri::command]
+pub fn search_dir(
+    root: String,
+    query: String,
+    show_hidden: bool,
+    limit: usize,
+) -> Result<Vec<SearchHit>, String> {
+    let q = query.to_lowercase();
+    if q.is_empty() {
+        return Ok(Vec::new());
+    }
+    let root_path = PathBuf::from(&root);
+    if !root_path.is_dir() {
+        return Err(format!("Not a directory: {}", root));
+    }
+
+    let mut hits = Vec::new();
+    let walker = walkdir::WalkDir::new(&root_path)
+        .follow_links(false)
+        .min_depth(1)
+        .into_iter()
+        .filter_entry(|e| {
+            if show_hidden {
+                return true;
+            }
+            !e.file_name().to_string_lossy().starts_with('.')
+        });
+
+    for entry in walker.flatten() {
+        if hits.len() >= limit {
+            break;
+        }
+        let name = entry.file_name().to_string_lossy().to_string();
+        if !name.to_lowercase().contains(&q) {
+            continue;
+        }
+        let entry_path = entry.path();
+        let is_dir = entry.file_type().is_dir();
+        let kind = detect_kind(entry_path, is_dir);
+        let parent_dir = entry_path
+            .parent()
+            .map(|p| p.to_string_lossy().to_string())
+            .unwrap_or_default();
+        let modified = entry
+            .metadata()
+            .ok()
+            .and_then(|m| m.modified().ok())
+            .map(format_time);
+        hits.push(SearchHit {
+            id: path_to_id(entry_path),
+            name,
+            kind,
+            path: entry_path.to_string_lossy().to_string(),
+            parent_dir,
+            modified,
+            is_dir,
+        });
+    }
+    Ok(hits)
+}
+
 #[tauri::command]
 pub fn create_file(parent: String, name: String) -> Result<String, String> {
     validate_name(&name)?;
