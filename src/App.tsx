@@ -599,7 +599,6 @@ function App() {
     onDuplicate: handleDuplicate,
     onOpenInEditor: handleOpenInEditor,
     onOpenInTerminal: () => handleOpenInTerminal(),
-    onReveal: handleReveal,
     vimNavigation,
   });
 

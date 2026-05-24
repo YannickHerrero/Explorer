@@ -13,7 +13,7 @@ export const COMMANDS: Command[] = [
   { id: "c-paste", name: "Paste", group: "File", shortcut: ["Ctrl", "V"], icon: "copy" },
   { id: "c-open-terminal", name: "Open in Terminal", group: "Open", shortcut: ["Ctrl", "'"], icon: "terminal" },
   { id: "c-open-editor", name: "Open in Editor", group: "Open", shortcut: ["Ctrl", "E"], icon: "code" },
-  { id: "c-reveal", name: "Reveal in Enclosing Folder", group: "Open", shortcut: ["Ctrl", "R"], icon: "target" },
+  { id: "c-reveal", name: "Reveal in Enclosing Folder", group: "Open", icon: "target" },
   { id: "c-quick-look", name: "Quick Look", group: "View", shortcut: ["Space"], icon: "eye" },
   { id: "c-toggle-sidebar", name: "Toggle Sidebar", group: "View", shortcut: ["Ctrl", "B"], icon: "sidebar" },
   { id: "c-toggle-preview", name: "Toggle Preview", group: "View", shortcut: ["Shift", "Ctrl", "P"], icon: "panel" },
@@ -57,7 +57,6 @@ export const SHORTCUTS: ShortcutGroup[] = [
       { keys: ["Space"], desc: "Quick Look" },
       { keys: ["Ctrl", "E"], desc: "Open in editor (notepad)" },
       { keys: ["Ctrl", "'"], desc: "Open in terminal (wt)" },
-      { keys: ["Ctrl", "R"], desc: "Reveal in enclosing folder" },
     ],
   },
   {
