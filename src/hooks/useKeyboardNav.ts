@@ -133,6 +133,15 @@ export function useKeyboardNav(opts: KeyboardNavOptions) {
       const currentSelectedId = selection[focusedCol + 1];
       const currentIdx = currentItems.findIndex((it) => it.id === currentSelectedId);
 
+      // R = rename works regardless of vim mode (it's the one bare-letter
+      // shortcut we expose for non-vim users). All other bare letters are
+      // gated behind vim mode.
+      if (!meta && !e.altKey && !e.shiftKey && (e.key === "r" || e.key === "R")) {
+        e.preventDefault();
+        onRename();
+        return;
+      }
+
       const isVimChar = (ch: string) => "hjklyxp".includes(ch);
       if (!vimNavigation && e.key.length === 1 && isVimChar(e.key)) return;
 
@@ -170,12 +179,9 @@ export function useKeyboardNav(opts: KeyboardNavOptions) {
       } else if (e.key === " ") {
         e.preventDefault();
         onOpen();
-      } else if (meta && e.key === "Enter") {
-        e.preventDefault();
-        onOpen();
       } else if (e.key === "Enter") {
         e.preventDefault();
-        onRename();
+        onOpen();
       } else if (e.key === "y") {
         e.preventDefault();
         onCopy();

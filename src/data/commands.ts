@@ -4,7 +4,7 @@ export const COMMANDS: Command[] = [
   { id: "c-new-folder", name: "New Folder", group: "File", shortcut: ["Shift", "Ctrl", "N"], icon: "folder-plus" },
   { id: "c-new-file", name: "New File", group: "File", shortcut: ["Ctrl", "N"], icon: "file-plus" },
   { id: "c-duplicate", name: "Duplicate", group: "File", shortcut: ["Ctrl", "D"], icon: "copy" },
-  { id: "c-rename", name: "Rename", group: "File", shortcut: ["Enter"], icon: "edit" },
+  { id: "c-rename", name: "Rename", group: "File", shortcut: ["R"], icon: "edit" },
   { id: "c-move", name: "Move to...", group: "File", shortcut: ["Alt", "Ctrl", "M"], icon: "move" },
   { id: "c-trash", name: "Move to Trash", group: "File", shortcut: ["Ctrl", "Del"], icon: "trash" },
   { id: "c-tag", name: "Add Tag...", group: "File", shortcut: ["Ctrl", "T"], icon: "tag" },
@@ -40,7 +40,7 @@ export const SHORTCUTS: ShortcutGroup[] = [
   {
     group: "File",
     items: [
-      { keys: ["Enter"], desc: "Rename" },
+      { keys: ["R"], desc: "Rename" },
       { keys: ["Ctrl", "N"], desc: "New file" },
       { keys: ["Shift", "Ctrl", "N"], desc: "New folder" },
       { keys: ["Ctrl", "D"], desc: "Duplicate" },
@@ -53,7 +53,7 @@ export const SHORTCUTS: ShortcutGroup[] = [
   {
     group: "Open",
     items: [
-      { keys: ["Ctrl", "Enter"], desc: "Open" },
+      { keys: ["Enter"], desc: "Open" },
       { keys: ["Space"], desc: "Quick Look" },
       { keys: ["Ctrl", "E"], desc: "Open in editor (notepad)" },
       { keys: ["Ctrl", "'"], desc: "Open in terminal (wt)" },
