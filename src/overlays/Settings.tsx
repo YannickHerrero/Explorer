@@ -260,7 +260,7 @@ export function Settings({
                 />
               </Section>
 
-              <Section title="Sidebar" subtitle="Devices, favorites, cloud drives, and trash.">
+              <Section title="Sidebar" subtitle="Favorites, drives, WSL distros, pinned folders, and tags.">
                 <Toggle value={sidebarOpen} onChange={setSidebarOpen} label={sidebarOpen ? "Visible" : "Hidden"} />
               </Section>
 
