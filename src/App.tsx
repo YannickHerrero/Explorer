@@ -861,7 +861,7 @@ function App() {
           updateProgress={updateProgress}
           onUpdate={handleUpdate}
         />
-        <Cheatsheet open={cheatsheetOpen} onClose={() => setCheatsheetOpen(false)} />
+        <Cheatsheet open={cheatsheetOpen} onClose={() => setCheatsheetOpen(false)} vimNavigation={vimNavigation} />
 
         <PromptModal
           open={prompt !== null}

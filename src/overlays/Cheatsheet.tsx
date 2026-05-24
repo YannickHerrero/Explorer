@@ -1,13 +1,16 @@
 import { Icon, KbdRow } from "@/icons/Icon";
-import { SHORTCUTS } from "@/data/commands";
+import { SHORTCUTS, VIM_SHORTCUTS } from "@/data/commands";
 
 interface CheatsheetProps {
   open: boolean;
   onClose: () => void;
+  vimNavigation: boolean;
 }
 
-export function Cheatsheet({ open, onClose }: CheatsheetProps) {
+export function Cheatsheet({ open, onClose, vimNavigation }: CheatsheetProps) {
   if (!open) return null;
+
+  const groups = vimNavigation ? [...SHORTCUTS, VIM_SHORTCUTS] : SHORTCUTS;
 
   return (
     <div
@@ -102,7 +105,7 @@ export function Cheatsheet({ open, onClose }: CheatsheetProps) {
             rowGap: 18,
           }}
         >
-          {SHORTCUTS.map((group, gi) => (
+          {groups.map((group, gi) => (
             <div key={gi}>
               <div
                 style={{

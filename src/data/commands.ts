@@ -33,7 +33,6 @@ export const SHORTCUTS: ShortcutGroup[] = [
     items: [
       { keys: ["←", "→"], desc: "Navigate between columns" },
       { keys: ["↑", "↓"], desc: "Move selection within column" },
-      { keys: ["h", "j", "k", "l"], desc: "Vim-style navigation" },
       { keys: ["Ctrl", "["], desc: "Back" },
       { keys: ["Ctrl", "]"], desc: "Forward" },
     ],
@@ -86,3 +85,16 @@ export const SHORTCUTS: ShortcutGroup[] = [
     ],
   },
 ];
+
+export const VIM_SHORTCUTS: ShortcutGroup = {
+  group: "Vim",
+  items: [
+    { keys: ["h"], desc: "Focus previous column" },
+    { keys: ["l"], desc: "Open / focus next column" },
+    { keys: ["j"], desc: "Move selection down" },
+    { keys: ["k"], desc: "Move selection up" },
+    { keys: ["y"], desc: "Yank (copy)" },
+    { keys: ["x"], desc: "Cut" },
+    { keys: ["p"], desc: "Paste" },
+  ],
+};
