@@ -157,6 +157,7 @@ function App() {
 
   const handleSetSidebarOpen = useCallback((v: boolean) => {
     setSidebarOpen(v);
+    if (!v) setSidebarFocused(false);
     updateConfig({ sidebar_open: v });
   }, [updateConfig]);
 
@@ -212,6 +213,8 @@ function App() {
   const [tagPickerOpen, setTagPickerOpen] = useState(false);
   const [prompt, setPrompt] = useState<PromptState | null>(null);
   const [activeTagFilter, setActiveTagFilter] = useState<string | null>(null);
+  const [sidebarFocused, setSidebarFocused] = useState(false);
+  const [sidebarFocusedId, setSidebarFocusedId] = useState<string | null>(null);
   const [updateAvailable, setUpdateAvailable] = useState<{ version: string; body?: string } | null>(null);
   const [updateProgress, setUpdateProgress] = useState<string | null>(null);
 
@@ -266,6 +269,7 @@ function App() {
   };
 
   const handleSidebarNav = (item: SidebarItem) => {
+    setSidebarFocused(false);
     if (item.diskPath) {
       setActiveTagFilter(null);
       realNav.navigateToPath(item.diskPath);
@@ -276,6 +280,12 @@ function App() {
       setActiveTagFilter((prev) => (prev === item.id ? null : item.id));
     }
   };
+
+  // Flat ordered list of all sidebar items (for keyboard navigation).
+  const sidebarFlat = useMemo<SidebarItem[]>(
+    () => (realSidebar ?? []).flatMap((s) => s.items),
+    [realSidebar],
+  );
 
   const runCommand = (cmd: Command) => {
     if (cmd.id.startsWith("c-theme-")) {
@@ -600,6 +610,29 @@ function App() {
     onOpenInEditor: handleOpenInEditor,
     onOpenInTerminal: () => handleOpenInTerminal(),
     vimNavigation,
+    sidebarOpen,
+    sidebarFocused,
+    onEnterSidebar: () => {
+      if (sidebarFlat.length === 0) return;
+      const seed = sidebarFlat.find((i) => i.id === activeSidebarId)?.id ?? sidebarFlat[0].id;
+      setSidebarFocusedId(seed);
+      setSidebarFocused(true);
+    },
+    onExitSidebar: () => setSidebarFocused(false),
+    onSidebarNav: (dir) => {
+      if (sidebarFlat.length === 0) return;
+      const curIdx = sidebarFlat.findIndex((i) => i.id === sidebarFocusedId);
+      const nextIdx = dir === "down"
+        ? Math.min(sidebarFlat.length - 1, (curIdx < 0 ? -1 : curIdx) + 1)
+        : Math.max(0, (curIdx < 0 ? sidebarFlat.length : curIdx) - 1);
+      setSidebarFocusedId(sidebarFlat[nextIdx].id);
+    },
+    onSidebarActivate: () => {
+      const item = sidebarFlat.find((i) => i.id === sidebarFocusedId);
+      if (item) handleSidebarNav(item);
+      // handleSidebarNav already clears sidebarFocused.
+      nav.setFocusedCol(0);
+    },
   });
 
   const pathNames = useMemo(() => buildPathNames(tree, nav.selection), [tree, nav.selection]);
@@ -771,6 +804,8 @@ function App() {
               density={density}
               sections={realSidebar ?? []}
               onDropOnItem={handleDropFiles}
+              hasFocus={sidebarFocused}
+              focusedId={sidebarFocusedId}
             />
           )}
           <Columns
@@ -780,7 +815,7 @@ function App() {
             onNavigate={handleNavigate}
             density={density}
             focusedCol={nav.focusedCol}
-            setFocusedCol={nav.setFocusedCol}
+            setFocusedCol={(col) => { nav.setFocusedCol(col); setSidebarFocused(false); }}
             selectedDiskPath={selectedDiskPath}
             onOpenFile={handleOpenFile}
             fileTags={selectedFileTags}

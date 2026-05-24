@@ -33,6 +33,12 @@ interface KeyboardNavOptions {
   onOpenInEditor: () => void;
   onOpenInTerminal: () => void;
   vimNavigation: boolean;
+  sidebarOpen: boolean;
+  sidebarFocused: boolean;
+  onEnterSidebar: () => void;
+  onExitSidebar: () => void;
+  onSidebarNav: (dir: "up" | "down") => void;
+  onSidebarActivate: () => void;
 }
 
 export function useKeyboardNav(opts: KeyboardNavOptions) {
@@ -73,6 +79,12 @@ export function useKeyboardNav(opts: KeyboardNavOptions) {
         onOpenInEditor,
         onOpenInTerminal,
         vimNavigation,
+        sidebarOpen,
+        sidebarFocused,
+        onEnterSidebar,
+        onExitSidebar,
+        onSidebarNav,
+        onSidebarActivate,
       } = ref.current;
 
       const target = e.target as HTMLElement;
@@ -92,7 +104,8 @@ export function useKeyboardNav(opts: KeyboardNavOptions) {
       if (meta && !e.shiftKey && !e.altKey && e.key.toLowerCase() === "b") { e.preventDefault(); onToggleSidebar(); return; }
 
       if (e.key === "Escape") {
-        onDismissOverlays();
+        if (overlaysOpen) onDismissOverlays();
+        else if (sidebarFocused) onExitSidebar();
         return;
       }
 
@@ -102,7 +115,41 @@ export function useKeyboardNav(opts: KeyboardNavOptions) {
         return;
       }
 
+      // Tab cycles sidebar ↔ columns.
+      if (e.key === "Tab" && !e.shiftKey && !meta && !e.altKey) {
+        e.preventDefault();
+        if (sidebarFocused) onExitSidebar();
+        else if (sidebarOpen) onEnterSidebar();
+        return;
+      }
+
       if (overlaysOpen) return;
+
+      // Sidebar-focused mode: ignore column nav, route arrows/letters to sidebar handlers.
+      if (sidebarFocused) {
+        if (e.key === "ArrowDown" || e.key === "j") {
+          e.preventDefault();
+          onSidebarNav("down");
+          return;
+        }
+        if (e.key === "ArrowUp" || e.key === "k") {
+          e.preventDefault();
+          onSidebarNav("up");
+          return;
+        }
+        if (e.key === "Enter" || e.key === "ArrowRight" || e.key === "l") {
+          e.preventDefault();
+          onSidebarActivate();
+          return;
+        }
+        if (e.key === "ArrowLeft" || e.key === "h") {
+          e.preventDefault();
+          onExitSidebar();
+          return;
+        }
+        // Swallow any other non-meta keys so they don't reach column nav.
+        return;
+      }
 
       if (meta && e.shiftKey && e.key.toLowerCase() === "n") {
         e.preventDefault();
@@ -186,6 +233,8 @@ export function useKeyboardNav(opts: KeyboardNavOptions) {
         if (focusedCol > 0) {
           setFocusedCol(focusedCol - 1);
           navigateTo(selection.slice(0, focusedCol + 1), focusedCol - 1);
+        } else if (sidebarOpen) {
+          onEnterSidebar();
         }
       } else if (e.key === " ") {
         e.preventDefault();

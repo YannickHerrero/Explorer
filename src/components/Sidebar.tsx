@@ -10,9 +10,11 @@ interface SidebarProps {
   density: DensityTokens;
   sections: SidebarSection[];
   onDropOnItem?: (sourcePath: string, destDir: string, mode: "move" | "copy") => void;
+  hasFocus?: boolean;
+  focusedId?: string | null;
 }
 
-export function Sidebar({ width, activeId, onNavigate, density, sections, onDropOnItem }: SidebarProps) {
+export function Sidebar({ width, activeId, onNavigate, density, sections, onDropOnItem, hasFocus, focusedId }: SidebarProps) {
   const data = sections;
   return (
     <div
@@ -47,6 +49,8 @@ export function Sidebar({ width, activeId, onNavigate, density, sections, onDrop
               key={item.id}
               item={item}
               active={activeId === item.id}
+              focused={!!hasFocus && focusedId === item.id}
+              dimActive={!!hasFocus}
               onClick={() => onNavigate(item)}
               density={density}
               onDropOnItem={onDropOnItem}
@@ -63,19 +67,32 @@ const MemoSidebarRow = memo(SidebarRow);
 function SidebarRow({
   item,
   active,
+  focused,
+  dimActive,
   onClick,
   density,
   onDropOnItem,
 }: {
   item: SidebarItem;
   active: boolean;
+  focused: boolean;
+  dimActive: boolean;
   onClick: () => void;
   density: DensityTokens;
   onDropOnItem?: (sourcePath: string, destDir: string, mode: "move" | "copy") => void;
 }) {
   const acceptsDrop = !!item.diskPath && !!onDropOnItem;
   const [dropActive, setDropActive] = useState(false);
-  const bg = dropActive ? "var(--paper-deep)" : active ? "var(--accent)" : "transparent";
+  // Visual rules:
+  //  - keyboard cursor (focused) always wins → accent
+  //  - active (current root) gets accent when sidebar isn't focused; demotes to paper-deep when sidebar is focused but cursor is elsewhere
+  //  - drop-target dashed accent border overrides
+  let bg = "transparent";
+  if (focused) bg = "var(--accent)";
+  else if (active && !dimActive) bg = "var(--accent)";
+  else if (active && dimActive) bg = "var(--paper-deep)";
+  if (dropActive) bg = "var(--paper-deep)";
+  const isHighlight = focused || (active && !dimActive);
   const border = dropActive ? "1px dashed var(--accent)" : "1px solid transparent";
   return (
     <div
@@ -108,18 +125,18 @@ function SidebarRow({
         padding: "0 8px",
         borderRadius: 5,
         background: bg,
-        color: active ? "var(--paper)" : "var(--ink-soft)",
+        color: isHighlight ? "var(--paper)" : "var(--ink-soft)",
         cursor: "pointer",
         fontFamily: "var(--font-sans)",
         fontSize: density.fontBody - 0.5,
-        fontWeight: active ? 500 : 400,
+        fontWeight: isHighlight || (active && dimActive) ? 500 : 400,
         border,
         boxSizing: "border-box",
       }}
     >
       <span
         style={{
-          color: active ? "var(--paper)" : item.color || "var(--muted)",
+          color: isHighlight ? "var(--paper)" : item.color || "var(--muted)",
           display: "inline-flex",
         }}
       >
@@ -154,8 +171,8 @@ function SidebarRow({
           style={{
             fontFamily: "var(--font-mono)",
             fontSize: 10,
-            color: active ? "var(--paper)" : "var(--muted)",
-            opacity: active ? 0.8 : 1,
+            color: isHighlight ? "var(--paper)" : "var(--muted)",
+            opacity: isHighlight ? 0.8 : 1,
           }}
         >
           {item.badge}
