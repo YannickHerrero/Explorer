@@ -609,6 +609,8 @@ function App() {
           setSidebarOpen={handleSetSidebarOpen}
           hideTitlebar={hideTitlebar}
           setHideTitlebar={handleSetHideTitlebar}
+          showHidden={showHidden}
+          setShowHidden={handleSetShowHidden}
           tags={config.tags}
           onAddTag={addTag}
           onRemoveTag={removeTag}

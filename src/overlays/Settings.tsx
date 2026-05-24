@@ -20,6 +20,8 @@ interface SettingsProps {
   setSidebarOpen: (v: boolean) => void;
   hideTitlebar: boolean;
   setHideTitlebar: (v: boolean) => void;
+  showHidden: boolean;
+  setShowHidden: (v: boolean) => void;
   tags?: TagDef[];
   onAddTag?: (tag: TagDef) => void;
   onRemoveTag?: (tagId: string) => void;
@@ -40,6 +42,8 @@ export function Settings({
   setSidebarOpen,
   hideTitlebar,
   setHideTitlebar,
+  showHidden,
+  setShowHidden,
   tags,
   onAddTag,
   onRemoveTag,
@@ -258,6 +262,10 @@ export function Settings({
 
               <Section title="Window" subtitle="Control the native window appearance.">
                 <Toggle value={hideTitlebar} onChange={setHideTitlebar} label="Hide native title bar" />
+              </Section>
+
+              <Section title="Files" subtitle="What appears in folder listings.">
+                <Toggle value={showHidden} onChange={setShowHidden} label="Show hidden files and folders" />
               </Section>
 
               <Section title="Keyboard" subtitle="Explorer is keyboard-first. Press Ctrl+/ anywhere for the full map.">
