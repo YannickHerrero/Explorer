@@ -1,6 +1,6 @@
 # Explorer
 
-A modern, keyboard-driven file explorer built with Tauri v2, React, and TypeScript. Designed for speed, simplicity, and cross-platform use.
+A keyboard-driven file explorer for Windows, built with Tauri v2, React, and TypeScript.
 
 ![Explorer Demo](explorer-demo.png)
 
@@ -10,16 +10,20 @@ Download the latest Windows installer from the [Releases](https://github.com/Yan
 
 ## Features
 
-- **Column view** - macOS Finder-style column navigation
-- **Keyboard-first** - Full keyboard navigation with arrow keys and vim bindings (`hjkl`, `y`/`x`/`p` for copy/cut/paste)
-- **Command palette** - `Ctrl+K` for quick access to all actions
-- **Folder palette** - `Ctrl+P` for instant folder navigation
-- **Search** - `Ctrl+F` to search the current directory with filters
-- **Tag system** - Color-coded tags with custom tag creation
-- **5 themes** - Sage, Paper, Stone, Clay, and Ink (dark mode)
-- **3 density levels** - Compact, Comfortable, and Spacious
-- **Preview pane** - Image previews, file metadata, and quick actions
-- **Cross-platform** - Windows, Linux, and macOS
+- **Column view** — macOS Finder-style hierarchical columns
+- **Keyboard-first** — Full keyboard navigation; optional Vim bindings (`hjkl` + `y`/`x`/`p`)
+- **File operations** — Rename, new file/folder, duplicate, move to trash, copy / cut / paste
+- **Drag and drop** — Move files between columns or onto pinned sidebar folders
+- **Search** — Recursive `walkdir`-based search across the current folder or home
+- **Preview pane** — Real text, code, image, audio, video, and PDF preview
+- **Tag system** — Color-coded tags; click a tag in the sidebar to filter
+- **Quick open** — Open files in Notepad (`Ctrl+E`) or the current folder in Windows Terminal (`` Ctrl+` ``)
+- **Pinned folders** — Right-click any folder in the sidebar to pin it to Favorites
+- **WSL & drives** — All mounted drives and WSL distros surface automatically in the sidebar
+- **Themes & density** — 5 themes (Sage, Paper, Stone, Clay, Ink dark) × 3 densities (Compact / Comfortable / Spacious)
+- **Toggleable preview** — `Ctrl+Shift+P`
+- **Show hidden files** — `Ctrl+H`
+- **Auto-update** — Manual check from Settings; updates fetched from GitHub releases
 
 ## Tech Stack
 
@@ -42,19 +46,17 @@ Download the latest Windows installer from the [Releases](https://github.com/Yan
 ### Development
 
 ```bash
-# Install dependencies
 bun install
-
-# Run in development mode
 bun tauri dev
 ```
 
-### Building
+### Building a Windows release from WSL
 
 ```bash
-# Build for production
-bun tauri build
+make install   # cross-compile to x86_64-pc-windows-gnu and install the .exe
 ```
+
+See `Makefile` for the individual targets.
 
 ## Keyboard Shortcuts
 
@@ -64,48 +66,69 @@ bun tauri build
 |-----|--------|
 | `←` `→` | Navigate between columns |
 | `↑` `↓` | Move selection within column |
-| `h` `j` `k` `l` | Vim-style navigation |
+| `Home` `End` | First / last item in column |
+| `PgUp` `PgDn` | Jump 10 items at a time |
 | `Ctrl+[` | Back |
 | `Ctrl+]` | Forward |
-| `Tab` | Cycle focus: sidebar, columns, preview |
 
-### Actions
+### File operations
 
 | Key | Action |
 |-----|--------|
-| `Space` | Quick Look (open file) |
-| `Ctrl+Enter` | Open file |
-| `Ctrl+C` / `y` | Copy |
-| `Ctrl+X` / `x` | Cut |
-| `Ctrl+V` / `p` | Paste |
-| `Ctrl+Backspace` | Move to Trash |
-| `Ctrl+T` | Add tag |
+| `Enter` | Open |
+| `Space` | Quick Look |
+| `R` | Rename |
+| `Ctrl+N` | New file |
+| `Ctrl+Shift+N` | New folder |
 | `Ctrl+D` | Duplicate |
-| `Enter` | Rename |
+| `Ctrl+C` / `Ctrl+X` / `Ctrl+V` | Copy / Cut / Paste |
+| `Ctrl+Del` or `Ctrl+Backspace` | Move to Trash |
+| `Ctrl+T` | Add tag |
 
-### Palettes & Overlays
+### Open in…
+
+| Key | Action |
+|-----|--------|
+| `Ctrl+E` | Open file in Notepad |
+| `` Ctrl+` `` | Open folder in Windows Terminal |
+
+### Palettes & overlays
 
 | Key | Action |
 |-----|--------|
 | `Ctrl+K` | Command palette |
 | `Ctrl+P` | Go to folder |
 | `Ctrl+F` | Search |
+| `Ctrl+B` | Toggle sidebar |
+| `Ctrl+Shift+P` | Toggle preview pane |
+| `Ctrl+H` | Toggle hidden files |
 | `Ctrl+,` | Settings |
 | `Ctrl+/` | Keyboard shortcuts |
 | `Esc` | Dismiss |
+
+### Vim mode (Settings → Keyboard)
+
+When enabled, the following bare-letter shortcuts are active:
+
+| Key | Action |
+|-----|--------|
+| `h` `j` `k` `l` | Left / down / up / right |
+| `y` | Yank (copy) |
+| `x` | Cut |
+| `p` | Paste |
 
 ## Project Structure
 
 ```
 src/
-  components/     UI components (Chrome, Columns, Sidebar, PreviewPane)
-  overlays/       Modal overlays (CommandPalette, Settings, TagPicker, etc.)
-  hooks/          React hooks (useKeyboardNav, useRealFileTree, useConfig)
-  data/           Command definitions and mock data
+  components/     UI components (Chrome, Columns, Sidebar, PreviewPane, StatusBar)
+  overlays/       Modal overlays (CommandPalette, SearchOverlay, Settings, TagPicker, PromptModal, Cheatsheet, ContextMenu, FolderPalette)
+  hooks/          React hooks (useKeyboardNav, useRealFileTree, useConfig, useInit, useTheme, useSidebarDirs)
+  data/           Command and shortcut catalog
   themes/         Theme and density token definitions
   icons/          SVG icon library
 src-tauri/
-  src/commands/   Rust backend commands (filesystem, config, init)
+  src/commands/   Rust backend (fs operations, search, config, init)
 ```
 
 ## License
