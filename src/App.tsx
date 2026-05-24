@@ -315,6 +315,8 @@ function App() {
       handleDuplicate();
     } else if (cmd.id === "c-open-editor") {
       handleOpenInEditor();
+    } else if (cmd.id === "c-open-terminal") {
+      handleOpenInTerminal();
     } else {
       showToast(cmd.name);
     }
@@ -440,6 +442,28 @@ function App() {
     }
   }, [isTauriReady, nav.selection, realNav.state]);
 
+  const handleOpenInTerminal = useCallback(async (overrideDir?: string) => {
+    if (!isTauriReady) return;
+    let dir = overrideDir;
+    if (!dir) {
+      const node = resolveSelection(tree, nav.selection);
+      const lastId = nav.selection[nav.selection.length - 1];
+      if (node?.kind === "folder" && lastId) {
+        dir = realNav.state?.pathMap.get(lastId) ?? realNav.state?.rootPath;
+      } else {
+        const parentId = nav.selection[nav.selection.length - 2];
+        dir = parentId ? realNav.state?.pathMap.get(parentId) : realNav.state?.rootPath;
+      }
+    }
+    if (!dir) return;
+    try {
+      const { invoke } = await import("@tauri-apps/api/core");
+      await invoke("open_in_terminal", { dir });
+    } catch (err) {
+      showToast(`Open in terminal failed: ${err}`);
+    }
+  }, [isTauriReady, nav.selection, realNav.state, tree]);
+
   const handleDuplicate = useCallback(async () => {
     if (!isTauriReady) return;
     const lastId = nav.selection[nav.selection.length - 1];
@@ -539,6 +563,7 @@ function App() {
     onNewFile: handleNewFileOpen,
     onDuplicate: handleDuplicate,
     onOpenInEditor: handleOpenInEditor,
+    onOpenInTerminal: () => handleOpenInTerminal(),
     vimNavigation,
   });
 
@@ -825,6 +850,14 @@ function App() {
               else if (item.id === "open" || item.id === "ql") handleOpenFile();
               else if (item.id === "ren") handleRenameOpen();
               else if (item.id === "dup") handleDuplicate();
+              else if (item.id === "term") {
+                if (contextMenu?.isSidebar) {
+                  const sbItem = realSidebar?.flatMap((s) => s.items).find((i) => i.id === contextMenu.nodeId);
+                  if (sbItem?.diskPath) handleOpenInTerminal(sbItem.diskPath);
+                } else {
+                  handleOpenInTerminal();
+                }
+              }
               else showToast(item.name);
             }}
             isFolder={contextNode?.kind === "folder"}
