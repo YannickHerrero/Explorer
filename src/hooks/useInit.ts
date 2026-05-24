@@ -19,6 +19,7 @@ interface RawInitData {
     sidebar_open: boolean;
     show_hidden: boolean;
     vim_navigation: boolean;
+    show_preview: boolean;
     hide_titlebar: boolean;
     last_path: string | null;
     pinned_folders: { name: string; path: string }[];
@@ -56,6 +57,7 @@ export interface InitData {
     sidebar_open: boolean;
     show_hidden: boolean;
     vim_navigation: boolean;
+    show_preview: boolean;
     hide_titlebar: boolean;
     last_path: string | null;
     pinned_folders: { name: string; path: string }[];
@@ -93,6 +95,7 @@ export function useInit(): { data: InitData | null; error: string | null } {
             sidebar_open: raw.config.sidebar_open,
             show_hidden: raw.config.show_hidden,
             vim_navigation: raw.config.vim_navigation,
+            show_preview: raw.config.show_preview,
             hide_titlebar: raw.config.hide_titlebar,
             last_path: raw.config.last_path,
             pinned_folders: raw.config.pinned_folders || [],

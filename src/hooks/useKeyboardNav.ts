@@ -24,6 +24,7 @@ interface KeyboardNavOptions {
   onTrash: () => void;
   onToggleTagPicker: () => void;
   onToggleHidden: () => void;
+  onTogglePreview: () => void;
   vimNavigation: boolean;
 }
 
@@ -56,6 +57,7 @@ export function useKeyboardNav(opts: KeyboardNavOptions) {
         onTrash,
         onToggleTagPicker,
         onToggleHidden,
+        onTogglePreview,
         vimNavigation,
       } = ref.current;
 
@@ -68,7 +70,8 @@ export function useKeyboardNav(opts: KeyboardNavOptions) {
       const meta = e.metaKey || e.ctrlKey;
 
       if (meta && e.key.toLowerCase() === "k") { e.preventDefault(); onTogglePalette(); return; }
-      if (meta && e.key.toLowerCase() === "p") { e.preventDefault(); onToggleFolderPalette(); return; }
+      if (meta && e.shiftKey && e.key.toLowerCase() === "p") { e.preventDefault(); onTogglePreview(); return; }
+      if (meta && !e.shiftKey && e.key.toLowerCase() === "p") { e.preventDefault(); onToggleFolderPalette(); return; }
       if (meta && e.key.toLowerCase() === "f") { e.preventDefault(); onToggleSearch(); return; }
       if (meta && e.key === ",") { e.preventDefault(); onToggleSettings(); return; }
       if (meta && e.key === "/") { e.preventDefault(); onToggleCheatsheet(); return; }

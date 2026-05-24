@@ -22,6 +22,8 @@ pub struct FileTag {
     pub tag_id: String,
 }
 
+fn default_true() -> bool { true }
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AppConfig {
     pub theme: String,
@@ -29,6 +31,8 @@ pub struct AppConfig {
     pub sidebar_open: bool,
     pub show_hidden: bool,
     pub vim_navigation: bool,
+    #[serde(default = "default_true")]
+    pub show_preview: bool,
     #[serde(default)]
     pub hide_titlebar: bool,
     pub last_path: Option<String>,
@@ -57,6 +61,7 @@ impl Default for AppConfig {
             sidebar_open: true,
             show_hidden: false,
             vim_navigation: true,
+            show_preview: true,
             hide_titlebar: true,
             last_path: None,
             pinned_folders: Vec::new(),

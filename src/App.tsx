@@ -101,6 +101,7 @@ function App() {
   const [showHidden, setShowHidden] = useState(false);
   const [hideTitlebar, setHideTitlebar] = useState(true);
   const [vimNavigation, setVimNavigation] = useState(true);
+  const [previewOpen, setPreviewOpen] = useState(true);
 
   // Apply init data once it arrives
   const [initApplied, setInitApplied] = useState(false);
@@ -112,6 +113,7 @@ function App() {
     setHideTitlebar(initData.config.hide_titlebar);
     setShowHidden(initData.config.show_hidden);
     setVimNavigation(initData.config.vim_navigation);
+    setPreviewOpen(initData.config.show_preview);
     setInitApplied(true);
   }, [initData, initApplied, setThemeKey]);
 
@@ -124,7 +126,8 @@ function App() {
     setHideTitlebar(config.hide_titlebar);
     setShowHidden(config.show_hidden);
     setVimNavigation(config.vim_navigation);
-  }, [config.theme, config.density, config.sidebar_open, config.hide_titlebar, config.show_hidden, config.vim_navigation, setThemeKey, initApplied]);
+    setPreviewOpen(config.show_preview);
+  }, [config.theme, config.density, config.sidebar_open, config.hide_titlebar, config.show_hidden, config.vim_navigation, config.show_preview, setThemeKey, initApplied]);
 
   // Apply decorations
   useEffect(() => {
@@ -163,6 +166,11 @@ function App() {
   const handleSetVimNavigation = useCallback((v: boolean) => {
     setVimNavigation(v);
     updateConfig({ vim_navigation: v });
+  }, [updateConfig]);
+
+  const handleSetPreviewOpen = useCallback((v: boolean) => {
+    setPreviewOpen(v);
+    updateConfig({ show_preview: v });
   }, [updateConfig]);
 
   // Navigation
@@ -265,6 +273,8 @@ function App() {
       setCheatsheetOpen(true);
     } else if (cmd.id === "c-toggle-sidebar") {
       handleSetSidebarOpen(!sidebarOpen);
+    } else if (cmd.id === "c-toggle-preview") {
+      handleSetPreviewOpen(!previewOpen);
     } else if (cmd.id === "c-hidden") {
       handleSetShowHidden(!showHidden);
       showToast(showHidden ? "Hidden files: off" : "Hidden files: on");
@@ -408,6 +418,7 @@ function App() {
       handleSetShowHidden(!showHidden);
       showToast(showHidden ? "Hidden files: off" : "Hidden files: on");
     },
+    onTogglePreview: () => handleSetPreviewOpen(!previewOpen),
     vimNavigation,
   });
 
@@ -524,6 +535,7 @@ function App() {
             selectedDiskPath={selectedDiskPath}
             onOpenFile={handleOpenFile}
             fileTags={selectedFileTags}
+            previewOpen={previewOpen}
           />
         </div>
 

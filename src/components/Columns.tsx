@@ -15,6 +15,7 @@ interface ColumnsProps {
   selectedDiskPath?: string;
   onOpenFile?: () => void;
   fileTags?: { name: string; color: string }[];
+  previewOpen?: boolean;
 }
 
 interface ColumnData {
@@ -39,7 +40,7 @@ export function buildColumnsFromSelection(selection: string[], tree: FileNode): 
   return cols;
 }
 
-export function Columns({ tree, selection, onSelect, onNavigate, density, focusedCol, setFocusedCol, selectedDiskPath, onOpenFile, fileTags }: ColumnsProps) {
+export function Columns({ tree, selection, onSelect, onNavigate, density, focusedCol, setFocusedCol, selectedDiskPath, onOpenFile, fileTags, previewOpen = true }: ColumnsProps) {
   const columns = buildColumnsFromSelection(selection, tree);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -74,14 +75,16 @@ export function Columns({ tree, selection, onSelect, onNavigate, density, focuse
           width={density.colW}
         />
       ))}
-      <PreviewPane
-        node={resolveSelection(tree, selection)}
-        density={density}
-        width={Math.max(360, density.colW + 80)}
-        diskPath={selectedDiskPath}
-        onOpen={onOpenFile}
-        fileTags={fileTags}
-      />
+      {previewOpen && (
+        <PreviewPane
+          node={resolveSelection(tree, selection)}
+          density={density}
+          width={Math.max(360, density.colW + 80)}
+          diskPath={selectedDiskPath}
+          onOpen={onOpenFile}
+          fileTags={fileTags}
+        />
+      )}
     </div>
   );
 }
