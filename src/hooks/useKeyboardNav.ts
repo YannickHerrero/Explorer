@@ -142,22 +142,36 @@ export function useKeyboardNav(opts: KeyboardNavOptions) {
       const isVimChar = (ch: string) => "hjklyxp".includes(ch);
       if (!vimNavigation && e.key.length === 1 && isVimChar(e.key)) return;
 
+      const jumpTo = (idx: number) => {
+        const target = currentItems[idx];
+        if (!target) return;
+        navigateTo([...selection.slice(0, focusedCol + 1), target.id], focusedCol);
+      };
+
       if (e.key === "ArrowDown" || e.key === "j") {
         e.preventDefault();
         if (currentItems.length === 0) return;
-        const nextIdx = Math.min(currentItems.length - 1, currentIdx + 1);
-        const nextItem = currentItems[nextIdx];
-        if (nextItem) {
-          navigateTo([...selection.slice(0, focusedCol + 1), nextItem.id], focusedCol);
-        }
+        jumpTo(Math.min(currentItems.length - 1, currentIdx + 1));
       } else if (e.key === "ArrowUp" || e.key === "k") {
         e.preventDefault();
         if (currentItems.length === 0) return;
-        const prevIdx = Math.max(0, currentIdx - 1);
-        const prevItem = currentItems[prevIdx];
-        if (prevItem) {
-          navigateTo([...selection.slice(0, focusedCol + 1), prevItem.id], focusedCol);
-        }
+        jumpTo(Math.max(0, currentIdx - 1));
+      } else if (e.key === "Home") {
+        e.preventDefault();
+        if (currentItems.length === 0) return;
+        jumpTo(0);
+      } else if (e.key === "End") {
+        e.preventDefault();
+        if (currentItems.length === 0) return;
+        jumpTo(currentItems.length - 1);
+      } else if (e.key === "PageDown") {
+        e.preventDefault();
+        if (currentItems.length === 0) return;
+        jumpTo(Math.min(currentItems.length - 1, currentIdx + 10));
+      } else if (e.key === "PageUp") {
+        e.preventDefault();
+        if (currentItems.length === 0) return;
+        jumpTo(Math.max(0, currentIdx - 10));
       } else if (e.key === "ArrowRight" || e.key === "l") {
         e.preventDefault();
         const item = currentItems[currentIdx];

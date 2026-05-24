@@ -33,6 +33,8 @@ export const SHORTCUTS: ShortcutGroup[] = [
     items: [
       { keys: ["←", "→"], desc: "Navigate between columns" },
       { keys: ["↑", "↓"], desc: "Move selection within column" },
+      { keys: ["Home", "End"], desc: "First / last item in column" },
+      { keys: ["PgUp", "PgDn"], desc: "Jump 10 items at a time" },
       { keys: ["Ctrl", "["], desc: "Back" },
       { keys: ["Ctrl", "]"], desc: "Forward" },
     ],
