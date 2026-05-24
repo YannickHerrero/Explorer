@@ -146,6 +146,8 @@ function FilePreview({ node, diskPath, onOpen, fileTags }: { node: FileNode; dis
           <TextPreview node={node} diskPath={diskPath} />
         ) : node.kind === "audio" ? (
           <AudioPreview diskPath={diskPath} />
+        ) : node.kind === "video" ? (
+          <VideoPreview diskPath={diskPath} />
         ) : (
           <div
             style={{
@@ -505,6 +507,41 @@ function TextPreview({ node, diskPath }: { node: FileNode; diskPath?: string }) 
           }}
         >
           Truncated \u00b7 showing first 64 KB
+        </div>
+      )}
+    </div>
+  );
+}
+
+function VideoPreview({ diskPath }: { diskPath?: string }) {
+  const url = useAssetUrl(diskPath);
+  return (
+    <div
+      style={{
+        background: "var(--paper-deep)",
+        borderRadius: 4,
+        overflow: "hidden",
+        border: "1px solid var(--line)",
+      }}
+    >
+      {url ? (
+        <video
+          controls
+          preload="metadata"
+          src={url}
+          style={{ width: "100%", maxHeight: 260, display: "block" }}
+        />
+      ) : (
+        <div
+          style={{
+            height: 220,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "var(--muted)",
+          }}
+        >
+          <Icon name="video" size={56} strokeWidth={1} />
         </div>
       )}
     </div>
