@@ -521,6 +521,24 @@ pub fn trash_path(path: String) -> Result<(), String> {
 }
 
 #[tauri::command]
+pub fn open_in_editor(path: String) -> Result<(), String> {
+    Command::new("notepad.exe")
+        .arg(&path)
+        .spawn()
+        .map_err(|e| format!("Failed to launch notepad: {}", e))?;
+    Ok(())
+}
+
+#[tauri::command]
+pub fn open_in_terminal(dir: String) -> Result<(), String> {
+    Command::new("wt.exe")
+        .args(["-d", &dir])
+        .spawn()
+        .map_err(|e| format!("Failed to launch Windows Terminal: {}", e))?;
+    Ok(())
+}
+
+#[tauri::command]
 pub fn copy_to_clipboard(path: String, kind: String) -> Result<String, String> {
     let file_path = PathBuf::from(&path);
     if !file_path.exists() {

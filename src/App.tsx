@@ -313,6 +313,8 @@ function App() {
       handleNewFileOpen();
     } else if (cmd.id === "c-duplicate") {
       handleDuplicate();
+    } else if (cmd.id === "c-open-editor") {
+      handleOpenInEditor();
     } else {
       showToast(cmd.name);
     }
@@ -425,6 +427,19 @@ function App() {
     setPrompt({ kind: "new-file", parentDir: parent });
   }, [isTauriReady, currentParentDir]);
 
+  const handleOpenInEditor = useCallback(async () => {
+    if (!isTauriReady) return;
+    const lastId = nav.selection[nav.selection.length - 1];
+    const diskPath = realNav.state?.pathMap.get(lastId);
+    if (!diskPath) return;
+    try {
+      const { invoke } = await import("@tauri-apps/api/core");
+      await invoke("open_in_editor", { path: diskPath });
+    } catch (err) {
+      showToast(`Open in editor failed: ${err}`);
+    }
+  }, [isTauriReady, nav.selection, realNav.state]);
+
   const handleDuplicate = useCallback(async () => {
     if (!isTauriReady) return;
     const lastId = nav.selection[nav.selection.length - 1];
@@ -523,6 +538,7 @@ function App() {
     onNewFolder: handleNewFolderOpen,
     onNewFile: handleNewFileOpen,
     onDuplicate: handleDuplicate,
+    onOpenInEditor: handleOpenInEditor,
     vimNavigation,
   });
 
