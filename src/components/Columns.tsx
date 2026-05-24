@@ -16,6 +16,7 @@ interface ColumnsProps {
   onOpenFile?: () => void;
   fileTags?: { name: string; color: string }[];
   previewOpen?: boolean;
+  shouldShowRow?: (nodeId: string, kind: string) => boolean;
 }
 
 interface ColumnData {
@@ -40,8 +41,11 @@ export function buildColumnsFromSelection(selection: string[], tree: FileNode): 
   return cols;
 }
 
-export function Columns({ tree, selection, onSelect, onNavigate, density, focusedCol, setFocusedCol, selectedDiskPath, onOpenFile, fileTags, previewOpen = true }: ColumnsProps) {
-  const columns = buildColumnsFromSelection(selection, tree);
+export function Columns({ tree, selection, onSelect, onNavigate, density, focusedCol, setFocusedCol, selectedDiskPath, onOpenFile, fileTags, previewOpen = true, shouldShowRow }: ColumnsProps) {
+  const rawColumns = buildColumnsFromSelection(selection, tree);
+  const columns = shouldShowRow
+    ? rawColumns.map((c) => ({ items: c.items.filter((it) => shouldShowRow(it.id, it.kind)) }))
+    : rawColumns;
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {

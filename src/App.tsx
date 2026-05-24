@@ -11,6 +11,7 @@ import { ContextMenu } from "@/overlays/ContextMenu";
 import { FolderPalette } from "@/overlays/FolderPalette";
 import { TagPicker } from "@/overlays/TagPicker";
 import { PromptModal } from "@/overlays/PromptModal";
+import { Icon } from "@/icons/Icon";
 import { useTheme } from "@/hooks/useTheme";
 import { useKeyboardNav } from "@/hooks/useKeyboardNav";
 import { useRealFileTree } from "@/hooks/useRealFileTree";
@@ -558,6 +559,25 @@ function App() {
     return getFileTags(selectedDiskPath);
   }, [selectedDiskPath, getFileTags]);
 
+  const taggedPaths = useMemo<Set<string> | null>(() => {
+    if (!activeTagFilter) return null;
+    return new Set(config.file_tags.filter((ft) => ft.tag_id === activeTagFilter).map((ft) => ft.file_path));
+  }, [activeTagFilter, config.file_tags]);
+
+  const shouldShowRow = useMemo(() => {
+    if (!taggedPaths) return undefined;
+    return (nodeId: string, kind: string) => {
+      if (kind === "folder") return true;
+      const path = realNav.state?.pathMap.get(nodeId);
+      return path ? taggedPaths.has(path) : false;
+    };
+  }, [taggedPaths, realNav.state]);
+
+  const activeTag = useMemo(() => {
+    if (!activeTagFilter) return null;
+    return config.tags.find((t) => t.id === activeTagFilter) ?? null;
+  }, [activeTagFilter, config.tags]);
+
   // Hard-fail if we're not running inside Tauri or if init failed.
   if (!IS_TAURI) {
     return <ErrorScreen title="This app must run inside Tauri" detail="The web preview is not supported; open the desktop app." />;
@@ -617,6 +637,54 @@ function App() {
           hideTitlebar={hideTitlebar}
         />
 
+        {activeTag && (
+          <div
+            style={{
+              padding: "6px 14px",
+              borderBottom: "1px solid var(--line)",
+              background: "var(--paper-alt)",
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              fontFamily: "var(--font-sans)",
+              fontSize: 11.5,
+              color: "var(--muted)",
+            }}
+          >
+            <span>Filtered by tag</span>
+            <span
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "2px 8px",
+                borderRadius: 12,
+                background: "var(--paper-deep)",
+                color: "var(--ink)",
+              }}
+            >
+              <span style={{ width: 8, height: 8, borderRadius: "50%", background: activeTag.color }} />
+              {activeTag.name}
+              <button
+                onClick={() => setActiveTagFilter(null)}
+                style={{
+                  border: "none",
+                  background: "transparent",
+                  color: "var(--muted)",
+                  cursor: "pointer",
+                  padding: 0,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  marginLeft: 2,
+                }}
+                title="Clear filter"
+              >
+                <Icon name="x" size={10} />
+              </button>
+            </span>
+          </div>
+        )}
+
         <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
           {sidebarOpen && (
             <Sidebar
@@ -639,6 +707,7 @@ function App() {
             onOpenFile={handleOpenFile}
             fileTags={selectedFileTags}
             previewOpen={previewOpen}
+            shouldShowRow={shouldShowRow}
           />
         </div>
 
