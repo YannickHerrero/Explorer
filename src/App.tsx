@@ -530,13 +530,14 @@ function App() {
   const currentNode = useMemo(() => resolveSelection(tree, nav.selection), [tree, nav.selection]);
 
   const activeSidebarId = useMemo(() => {
+    if (activeTagFilter) return activeTagFilter;
     if (!realSidebar || !realNav.state) return "home";
     const rootPath = realNav.state.rootPath;
     const match = realSidebar
       .flatMap((s) => s.items)
       .find((i) => i.diskPath === rootPath);
     return match?.id ?? "home";
-  }, [realSidebar, realNav.state]);
+  }, [activeTagFilter, realSidebar, realNav.state]);
 
   const contextNode = useMemo(() => {
     if (!contextMenu) return null;
