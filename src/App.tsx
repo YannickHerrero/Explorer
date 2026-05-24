@@ -10,6 +10,7 @@ import { Cheatsheet } from "@/overlays/Cheatsheet";
 import { ContextMenu } from "@/overlays/ContextMenu";
 import { FolderPalette } from "@/overlays/FolderPalette";
 import { TagPicker } from "@/overlays/TagPicker";
+import { PromptModal } from "@/overlays/PromptModal";
 import { useTheme } from "@/hooks/useTheme";
 import { useKeyboardNav } from "@/hooks/useKeyboardNav";
 import { useRealFileTree } from "@/hooks/useRealFileTree";
@@ -21,6 +22,11 @@ import { THEMES } from "@/themes";
 import type { DensityKey, SidebarItem, SidebarSection, FileNode, ThemeKey, Command } from "@/types";
 
 const IS_TAURI = "__TAURI_INTERNALS__" in window;
+
+type PromptState =
+  | { kind: "rename"; sourcePath: string; initialName: string }
+  | { kind: "new-folder"; parentDir: string }
+  | { kind: "new-file"; parentDir: string };
 
 // Build sidebar sections from init data
 function buildSidebarSections(
@@ -203,6 +209,7 @@ function App() {
   const [toast, setToast] = useState<string | null>(null);
   const [clipboard, setClipboard] = useState<{ path: string; name: string; mode: "copy" | "cut" } | null>(null);
   const [tagPickerOpen, setTagPickerOpen] = useState(false);
+  const [prompt, setPrompt] = useState<PromptState | null>(null);
   const [updateAvailable, setUpdateAvailable] = useState<{ version: string; body?: string } | null>(null);
   const [updateProgress, setUpdateProgress] = useState<string | null>(null);
 
@@ -290,6 +297,8 @@ function App() {
       handleTrash();
     } else if (cmd.id === "c-quick-look") {
       handleOpenFile();
+    } else if (cmd.id === "c-rename") {
+      handleRenameOpen();
     } else {
       showToast(cmd.name);
     }
@@ -366,6 +375,30 @@ function App() {
     }
   }, [isTauriReady, clipboard, tree, nav.selection, realNav.state]);
 
+  const handleRenameOpen = useCallback(() => {
+    if (!isTauriReady) return;
+    const lastId = nav.selection[nav.selection.length - 1];
+    const diskPath = realNav.state?.pathMap.get(lastId);
+    const node = resolveSelection(tree, nav.selection);
+    if (!diskPath || !node || lastId === "root") return;
+    setPrompt({ kind: "rename", sourcePath: diskPath, initialName: node.name });
+  }, [isTauriReady, nav.selection, realNav.state, tree]);
+
+  const handlePromptSubmit = useCallback(async (value: string) => {
+    if (!prompt) return;
+    setPrompt(null);
+    try {
+      const { invoke } = await import("@tauri-apps/api/core");
+      if (prompt.kind === "rename") {
+        await invoke("rename_path", { path: prompt.sourcePath, newName: value });
+        showToast(`Renamed to "${value}"`);
+      }
+      if (realNav.refreshCurrentDir) realNav.refreshCurrentDir();
+    } catch (err) {
+      showToast(String(err));
+    }
+  }, [prompt, realNav]);
+
   const handleTrash = useCallback(async () => {
     if (!isTauriReady) return;
     const lastId = nav.selection[nav.selection.length - 1];
@@ -383,7 +416,7 @@ function App() {
     }
   }, [isTauriReady, nav.selection, realNav.state, tree]);
 
-  const overlaysOpen = paletteOpen || folderPaletteOpen || searchOpen || settingsOpen || cheatsheetOpen || tagPickerOpen;
+  const overlaysOpen = paletteOpen || folderPaletteOpen || searchOpen || settingsOpen || cheatsheetOpen || tagPickerOpen || prompt !== null;
 
   useKeyboardNav({
     tree,
@@ -407,6 +440,7 @@ function App() {
       setCheatsheetOpen(false);
       setTagPickerOpen(false);
       setContextMenu(null);
+      setPrompt(null);
     },
     onOpen: handleOpenFile,
     onCopy: handleCopy,
@@ -419,6 +453,7 @@ function App() {
       showToast(showHidden ? "Hidden files: off" : "Hidden files: on");
     },
     onTogglePreview: () => handleSetPreviewOpen(!previewOpen),
+    onRename: handleRenameOpen,
     vimNavigation,
   });
 
@@ -590,6 +625,25 @@ function App() {
         />
         <Cheatsheet open={cheatsheetOpen} onClose={() => setCheatsheetOpen(false)} />
 
+        <PromptModal
+          open={prompt !== null}
+          title={
+            prompt?.kind === "rename"
+              ? "Rename"
+              : prompt?.kind === "new-folder"
+                ? "New Folder"
+                : prompt?.kind === "new-file"
+                  ? "New File"
+                  : ""
+          }
+          submitLabel={prompt?.kind === "rename" ? "Rename" : "Create"}
+          initialValue={prompt?.kind === "rename" ? prompt.initialName : ""}
+          selectRange={prompt?.kind === "rename" ? "basename" : "all"}
+          placeholder={prompt?.kind === "rename" ? undefined : "Name..."}
+          onSubmit={handlePromptSubmit}
+          onClose={() => setPrompt(null)}
+        />
+
         {contextMenu && (
           <ContextMenu
             x={contextMenu.x}
@@ -598,6 +652,7 @@ function App() {
             onRun={(item) => {
               if (item.id === "trash") handleTrash();
               else if (item.id === "open" || item.id === "ql") handleOpenFile();
+              else if (item.id === "ren") handleRenameOpen();
               else showToast(item.name);
             }}
             isFolder={contextNode?.kind === "folder"}

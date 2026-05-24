@@ -25,6 +25,7 @@ interface KeyboardNavOptions {
   onToggleTagPicker: () => void;
   onToggleHidden: () => void;
   onTogglePreview: () => void;
+  onRename: () => void;
   vimNavigation: boolean;
 }
 
@@ -58,6 +59,7 @@ export function useKeyboardNav(opts: KeyboardNavOptions) {
         onToggleTagPicker,
         onToggleHidden,
         onTogglePreview,
+        onRename,
         vimNavigation,
       } = ref.current;
 
@@ -141,6 +143,9 @@ export function useKeyboardNav(opts: KeyboardNavOptions) {
       } else if (meta && e.key === "Enter") {
         e.preventDefault();
         onOpen();
+      } else if (e.key === "Enter") {
+        e.preventDefault();
+        onRename();
       } else if (e.key === "y") {
         e.preventDefault();
         onCopy();

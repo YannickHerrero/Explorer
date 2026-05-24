@@ -394,6 +394,32 @@ pub fn move_path(source: String, dest_dir: String) -> Result<String, String> {
     Ok(dest.to_string_lossy().to_string())
 }
 
+fn validate_name(name: &str) -> Result<(), String> {
+    if name.is_empty() {
+        return Err("Name cannot be empty".to_string());
+    }
+    if name.contains('/') || name.contains('\\') {
+        return Err("Name cannot contain path separators".to_string());
+    }
+    if name == "." || name == ".." {
+        return Err("Invalid name".to_string());
+    }
+    Ok(())
+}
+
+#[tauri::command]
+pub fn rename_path(path: String, new_name: String) -> Result<String, String> {
+    validate_name(&new_name)?;
+    let src = PathBuf::from(&path);
+    let parent = src.parent().ok_or("Cannot rename root")?;
+    let dest = parent.join(&new_name);
+    if dest.exists() {
+        return Err(format!("'{}' already exists", new_name));
+    }
+    fs::rename(&src, &dest).map_err(|e| format!("Rename failed: {}", e))?;
+    Ok(dest.to_string_lossy().to_string())
+}
+
 #[tauri::command]
 pub fn trash_path(path: String) -> Result<(), String> {
     trash::delete(&path).map_err(|e| format!("Failed to move to trash: {}", e))?;
