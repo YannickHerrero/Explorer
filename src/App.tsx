@@ -794,7 +794,7 @@ function App() {
           />
         </div>
 
-        <StatusBar node={currentNode} onSettings={() => setSettingsOpen(true)} />
+        <StatusBar node={currentNode} diskPath={selectedDiskPath} onSettings={() => setSettingsOpen(true)} />
 
         {/* Overlays */}
         <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} onRun={runCommand} />

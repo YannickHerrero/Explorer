@@ -3,10 +3,11 @@ import type { FileNode } from "@/types";
 
 interface StatusBarProps {
   node: FileNode | null;
+  diskPath?: string;
   onSettings: () => void;
 }
 
-export function StatusBar({ node, onSettings }: StatusBarProps) {
+export function StatusBar({ node, diskPath, onSettings }: StatusBarProps) {
   const isFolder = !node || node.kind === "folder";
   const summary = isFolder
     ? `${(node?.children || []).length} items`
@@ -29,8 +30,23 @@ export function StatusBar({ node, onSettings }: StatusBarProps) {
       }}
     >
       <Icon name={isFolder ? "folder" : kindIcon(node?.kind || "file")} size={11} />
-      <span>{summary}</span>
+      {diskPath && (
+        <span
+          style={{
+            fontFamily: "var(--font-mono)",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+            maxWidth: "60%",
+            direction: "rtl",
+          }}
+          title={diskPath}
+        >
+          {diskPath}
+        </span>
+      )}
       <span style={{ flex: 1 }} />
+      <span>{summary}</span>
       <button
         onClick={onSettings}
         style={{
