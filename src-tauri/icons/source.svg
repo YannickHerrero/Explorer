@@ -2,54 +2,11 @@
   <!-- Background: paper-deep (warm cream) -->
   <rect width="1024" height="1024" rx="220" fill="#E8DCC4"/>
 
-  <!-- Three column cards: paper-alt -->
-  <rect x="148" y="220" width="220" height="584" rx="28" fill="#FAF3E4"/>
-  <rect x="402" y="220" width="220" height="584" rx="28" fill="#FAF3E4"/>
-  <rect x="656" y="220" width="220" height="584" rx="28" fill="#FAF3E4"/>
-
-  <!-- Column 1 rows (above and below the highlight) -->
-  <g fill="#8A7A63">
-    <rect x="180" y="262" width="156" height="14" rx="7"/>
-    <rect x="180" y="290" width="140" height="14" rx="7"/>
-    <rect x="180" y="318" width="156" height="14" rx="7"/>
-    <rect x="180" y="346" width="120" height="14" rx="7"/>
-    <rect x="180" y="374" width="148" height="14" rx="7"/>
-    <rect x="180" y="402" width="136" height="14" rx="7"/>
-    <rect x="180" y="486" width="140" height="14" rx="7"/>
-    <rect x="180" y="514" width="148" height="14" rx="7"/>
-    <rect x="180" y="542" width="120" height="14" rx="7"/>
-    <rect x="180" y="570" width="156" height="14" rx="7"/>
-    <rect x="180" y="598" width="136" height="14" rx="7"/>
-    <rect x="180" y="626" width="148" height="14" rx="7"/>
-    <rect x="180" y="654" width="120" height="14" rx="7"/>
-    <rect x="180" y="682" width="156" height="14" rx="7"/>
-    <rect x="180" y="710" width="136" height="14" rx="7"/>
-    <rect x="180" y="738" width="148" height="14" rx="7"/>
-    <rect x="180" y="766" width="120" height="14" rx="7"/>
-  </g>
-
-  <!-- Selected row highlight in column 1 (full-width strip, accent) -->
-  <rect x="148" y="438" width="220" height="32" fill="#B4542A"/>
-  <rect x="180" y="446" width="156" height="14" rx="7" fill="#FAF3E4"/>
-
-  <!-- Column 2 rows (the "into folder" view) -->
-  <g fill="#8A7A63">
-    <rect x="434" y="262" width="156" height="14" rx="7"/>
-    <rect x="434" y="290" width="140" height="14" rx="7"/>
-    <rect x="434" y="318" width="156" height="14" rx="7"/>
-    <rect x="434" y="346" width="120" height="14" rx="7"/>
-    <rect x="434" y="374" width="148" height="14" rx="7"/>
-    <rect x="434" y="402" width="136" height="14" rx="7"/>
-    <rect x="434" y="430" width="156" height="14" rx="7"/>
-    <rect x="434" y="458" width="140" height="14" rx="7"/>
-    <rect x="434" y="486" width="148" height="14" rx="7"/>
-    <rect x="434" y="514" width="120" height="14" rx="7"/>
-  </g>
-
-  <!-- Column 3 rows (preview / leaf) -->
-  <g fill="#8A7A63">
-    <rect x="688" y="262" width="156" height="14" rx="7"/>
-    <rect x="688" y="290" width="120" height="14" rx="7"/>
-    <rect x="688" y="318" width="148" height="14" rx="7"/>
+  <!-- Folder: accent (Paper theme selected-item color) -->
+  <g fill="#B4542A">
+    <!-- Tab -->
+    <rect x="192" y="296" width="280" height="100" rx="24"/>
+    <!-- Body -->
+    <rect x="192" y="346" width="640" height="400" rx="28"/>
   </g>
 </svg>
