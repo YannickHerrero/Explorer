@@ -134,6 +134,7 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [showHidden, setShowHidden] = useState(false);
   const [hideTitlebar, setHideTitlebar] = useState(true);
+  const [vimNavigation, setVimNavigation] = useState(true);
 
   // Apply init data once it arrives
   const [initApplied, setInitApplied] = useState(false);
@@ -144,6 +145,7 @@ function App() {
     setSidebarOpen(initData.config.sidebar_open);
     setHideTitlebar(initData.config.hide_titlebar);
     setShowHidden(initData.config.show_hidden);
+    setVimNavigation(initData.config.vim_navigation);
     setInitApplied(true);
   }, [initData, initApplied, setThemeKey]);
 
@@ -155,7 +157,8 @@ function App() {
     setSidebarOpen(config.sidebar_open);
     setHideTitlebar(config.hide_titlebar);
     setShowHidden(config.show_hidden);
-  }, [config.theme, config.density, config.sidebar_open, config.hide_titlebar, config.show_hidden, setThemeKey, initApplied]);
+    setVimNavigation(config.vim_navigation);
+  }, [config.theme, config.density, config.sidebar_open, config.hide_titlebar, config.show_hidden, config.vim_navigation, setThemeKey, initApplied]);
 
   // Apply decorations
   useEffect(() => {
@@ -189,6 +192,11 @@ function App() {
   const handleSetShowHidden = useCallback((v: boolean) => {
     setShowHidden(v);
     updateConfig({ show_hidden: v });
+  }, [updateConfig]);
+
+  const handleSetVimNavigation = useCallback((v: boolean) => {
+    setVimNavigation(v);
+    updateConfig({ vim_navigation: v });
   }, [updateConfig]);
 
   // Navigation
@@ -458,6 +466,7 @@ function App() {
       handleSetShowHidden(!showHidden);
       showToast(showHidden ? "Hidden files: off" : "Hidden files: on");
     },
+    vimNavigation,
   });
 
   const pathNames = useMemo(() => buildPathNames(tree, nav.selection), [tree, nav.selection]);
@@ -615,6 +624,8 @@ function App() {
           setHideTitlebar={handleSetHideTitlebar}
           showHidden={showHidden}
           setShowHidden={handleSetShowHidden}
+          vimNavigation={vimNavigation}
+          setVimNavigation={handleSetVimNavigation}
           tags={config.tags}
           onAddTag={addTag}
           onRemoveTag={removeTag}

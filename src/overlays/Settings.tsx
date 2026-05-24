@@ -22,6 +22,8 @@ interface SettingsProps {
   setHideTitlebar: (v: boolean) => void;
   showHidden: boolean;
   setShowHidden: (v: boolean) => void;
+  vimNavigation: boolean;
+  setVimNavigation: (v: boolean) => void;
   tags?: TagDef[];
   onAddTag?: (tag: TagDef) => void;
   onRemoveTag?: (tagId: string) => void;
@@ -44,6 +46,8 @@ export function Settings({
   setHideTitlebar,
   showHidden,
   setShowHidden,
+  vimNavigation,
+  setVimNavigation,
   tags,
   onAddTag,
   onRemoveTag,
@@ -269,9 +273,7 @@ export function Settings({
               </Section>
 
               <Section title="Keyboard" subtitle="Explorer is keyboard-first. Press Ctrl+/ anywhere for the full map.">
-                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                  <SettingsRow label="Use Vim-style navigation (hjkl)" value={false} />
-                </div>
+                <Toggle value={vimNavigation} onChange={setVimNavigation} label="Use Vim-style navigation (hjkl, yxp)" />
               </Section>
             </>
           ) : activeTab === "Tags" ? (
@@ -410,16 +412,6 @@ function Toggle({ value, onChange, label }: { value: boolean; onChange: (v: bool
         />
       </button>
       <span style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--ink-soft)" }}>{label}</span>
-    </div>
-  );
-}
-
-function SettingsRow({ label, value }: { label: string; value: boolean }) {
-  const [v, setV] = useState(value);
-  return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid var(--line)" }}>
-      <span style={{ fontFamily: "var(--font-sans)", fontSize: 12.5, color: "var(--ink-soft)" }}>{label}</span>
-      <Toggle value={v} onChange={setV} label="" />
     </div>
   );
 }

@@ -24,6 +24,7 @@ interface KeyboardNavOptions {
   onTrash: () => void;
   onToggleTagPicker: () => void;
   onToggleHidden: () => void;
+  vimNavigation: boolean;
 }
 
 export function useKeyboardNav(opts: KeyboardNavOptions) {
@@ -55,6 +56,7 @@ export function useKeyboardNav(opts: KeyboardNavOptions) {
         onTrash,
         onToggleTagPicker,
         onToggleHidden,
+        vimNavigation,
       } = ref.current;
 
       const target = e.target as HTMLElement;
@@ -95,6 +97,9 @@ export function useKeyboardNav(opts: KeyboardNavOptions) {
       const currentItems = columns[focusedCol]?.items || [];
       const currentSelectedId = selection[focusedCol + 1];
       const currentIdx = currentItems.findIndex((it) => it.id === currentSelectedId);
+
+      const isVimChar = (ch: string) => "hjklyxp".includes(ch);
+      if (!vimNavigation && e.key.length === 1 && isVimChar(e.key)) return;
 
       if (e.key === "ArrowDown" || e.key === "j") {
         e.preventDefault();
