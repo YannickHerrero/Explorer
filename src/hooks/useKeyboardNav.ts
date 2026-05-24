@@ -91,7 +91,7 @@ export function useKeyboardNav(opts: KeyboardNavOptions) {
       if (meta && e.key.toLowerCase() === "f") { e.preventDefault(); onToggleSearch(); return; }
       if (meta && e.key === ",") { e.preventDefault(); onToggleSettings(); return; }
       if (meta && e.key === "/") { e.preventDefault(); onToggleCheatsheet(); return; }
-      if (meta && e.altKey && e.key.toLowerCase() === "s") { e.preventDefault(); onToggleSidebar(); return; }
+      if (meta && !e.shiftKey && !e.altKey && e.key.toLowerCase() === "b") { e.preventDefault(); onToggleSidebar(); return; }
 
       if (e.key === "Escape") {
         onDismissOverlays();

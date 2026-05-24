@@ -15,7 +15,7 @@ export const COMMANDS: Command[] = [
   { id: "c-open-editor", name: "Open in Editor", group: "Open", shortcut: ["Ctrl", "E"], icon: "code" },
   { id: "c-reveal", name: "Reveal in Enclosing Folder", group: "Open", shortcut: ["Ctrl", "R"], icon: "target" },
   { id: "c-quick-look", name: "Quick Look", group: "View", shortcut: ["Space"], icon: "eye" },
-  { id: "c-toggle-sidebar", name: "Toggle Sidebar", group: "View", shortcut: ["Alt", "Ctrl", "S"], icon: "sidebar" },
+  { id: "c-toggle-sidebar", name: "Toggle Sidebar", group: "View", shortcut: ["Ctrl", "B"], icon: "sidebar" },
   { id: "c-toggle-preview", name: "Toggle Preview", group: "View", shortcut: ["Shift", "Ctrl", "P"], icon: "panel" },
   { id: "c-hidden", name: "Show Hidden Files", group: "View", shortcut: ["Shift", "L"], icon: "eye" },
   { id: "c-settings", name: "Open Settings", group: "App", shortcut: ["Ctrl", ","], icon: "settings" },
@@ -72,7 +72,7 @@ export const SHORTCUTS: ShortcutGroup[] = [
   {
     group: "View",
     items: [
-      { keys: ["Alt", "Ctrl", "S"], desc: "Toggle sidebar" },
+      { keys: ["Ctrl", "B"], desc: "Toggle sidebar" },
       { keys: ["Shift", "Ctrl", "P"], desc: "Toggle preview" },
       { keys: ["Shift", "L"], desc: "Show hidden" },
     ],
