@@ -8,7 +8,7 @@
   <rect x="656" y="220" width="220" height="584" rx="28" fill="#FAF3E4"/>
 
   <!-- Column 1 rows (above and below the highlight) -->
-  <g fill="#D4C5A8">
+  <g fill="#8A7A63">
     <rect x="180" y="262" width="156" height="14" rx="7"/>
     <rect x="180" y="290" width="140" height="14" rx="7"/>
     <rect x="180" y="318" width="156" height="14" rx="7"/>
@@ -33,7 +33,7 @@
   <rect x="180" y="446" width="156" height="14" rx="7" fill="#FAF3E4"/>
 
   <!-- Column 2 rows (the "into folder" view) -->
-  <g fill="#D4C5A8">
+  <g fill="#8A7A63">
     <rect x="434" y="262" width="156" height="14" rx="7"/>
     <rect x="434" y="290" width="140" height="14" rx="7"/>
     <rect x="434" y="318" width="156" height="14" rx="7"/>
@@ -47,7 +47,7 @@
   </g>
 
   <!-- Column 3 rows (preview / leaf) -->
-  <g fill="#D4C5A8">
+  <g fill="#8A7A63">
     <rect x="688" y="262" width="156" height="14" rx="7"/>
     <rect x="688" y="290" width="120" height="14" rx="7"/>
     <rect x="688" y="318" width="148" height="14" rx="7"/>
