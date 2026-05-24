@@ -210,6 +210,7 @@ function App() {
   const [clipboard, setClipboard] = useState<{ path: string; name: string; mode: "copy" | "cut" } | null>(null);
   const [tagPickerOpen, setTagPickerOpen] = useState(false);
   const [prompt, setPrompt] = useState<PromptState | null>(null);
+  const [activeTagFilter, setActiveTagFilter] = useState<string | null>(null);
   const [updateAvailable, setUpdateAvailable] = useState<{ version: string; body?: string } | null>(null);
   const [updateProgress, setUpdateProgress] = useState<string | null>(null);
 
@@ -265,7 +266,13 @@ function App() {
 
   const handleSidebarNav = (item: SidebarItem) => {
     if (item.diskPath) {
+      setActiveTagFilter(null);
       realNav.navigateToPath(item.diskPath);
+      return;
+    }
+    // Tag items have no diskPath — toggle a tag filter.
+    if (config.tags.some((t) => t.id === item.id)) {
+      setActiveTagFilter((prev) => (prev === item.id ? null : item.id));
     }
   };
 
