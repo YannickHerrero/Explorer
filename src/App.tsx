@@ -829,7 +829,7 @@ function App() {
           />
         </div>
 
-        <StatusBar node={currentNode} diskPath={selectedDiskPath} onSettings={() => setSettingsOpen(true)} />
+        <StatusBar node={currentNode} diskPath={selectedDiskPath} onSettings={() => setSettingsOpen(true)} onCheatsheet={() => setCheatsheetOpen(true)} />
 
         {/* Overlays */}
         <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} onRun={runCommand} />

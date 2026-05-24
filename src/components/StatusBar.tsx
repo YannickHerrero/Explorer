@@ -5,9 +5,10 @@ interface StatusBarProps {
   node: FileNode | null;
   diskPath?: string;
   onSettings: () => void;
+  onCheatsheet: () => void;
 }
 
-export function StatusBar({ node, diskPath, onSettings }: StatusBarProps) {
+export function StatusBar({ node, diskPath, onSettings, onCheatsheet }: StatusBarProps) {
   const isFolder = !node || node.kind === "folder";
   const summary = isFolder
     ? `${(node?.children || []).length} items`
@@ -63,9 +64,22 @@ export function StatusBar({ node, diskPath, onSettings }: StatusBarProps) {
       >
         <Icon name="settings" size={10} /> <span>Ctrl+,</span>
       </button>
-      <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+      <button
+        onClick={onCheatsheet}
+        style={{
+          background: "none",
+          border: "none",
+          color: "var(--muted)",
+          cursor: "pointer",
+          fontSize: 10.5,
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 4,
+          fontFamily: "var(--font-sans)",
+        }}
+      >
         <Icon name="keyboard" size={10} /> <span>Ctrl+/</span>
-      </span>
+      </button>
     </div>
   );
 }
