@@ -1,35 +1,110 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { Icon, kindIcon, Kbd } from "@/icons/Icon";
-import type { FileNode } from "@/types";
+
+interface SearchHit {
+  id: string;
+  name: string;
+  kind: string;
+  path: string;
+  parent_dir: string;
+  modified: string | null;
+  is_dir: boolean;
+}
 
 interface SearchOverlayProps {
   open: boolean;
   onClose: () => void;
+  currentDir: string | null;
+  homeDir: string | null;
+  showHidden: boolean;
+  onOpen?: (path: string) => void;
+  onReveal?: (path: string, parentDir: string) => void;
 }
 
-interface FlatFile extends FileNode {
-  path: string;
-}
+const RESULT_LIMIT = 200;
 
-export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
+export function SearchOverlay({
+  open,
+  onClose,
+  currentDir,
+  homeDir,
+  showHidden,
+  onOpen,
+  onReveal,
+}: SearchOverlayProps) {
   const [q, setQ] = useState("");
+  const [rawHits, setRawHits] = useState<SearchHit[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [activeIdx, setActiveIdx] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const [filters, setFilters] = useState({
+    kind: "all",
+    where: "current" as "current" | "home",
+  });
 
   useEffect(() => {
     if (open) {
       setQ("");
+      setRawHits([]);
+      setActiveIdx(0);
       setTimeout(() => inputRef.current?.focus(), 20);
     }
   }, [open]);
 
-  const [filters, setFilters] = useState({
-    kind: "all",
-    where: "current",
-    modified: "any",
-  });
+  // Debounced search
+  const searchSeq = useRef(0);
+  useEffect(() => {
+    if (!open) return;
+    const trimmed = q.trim();
+    if (!trimmed) {
+      setRawHits([]);
+      setLoading(false);
+      return;
+    }
+    const root = filters.where === "home" ? homeDir : currentDir;
+    if (!root) {
+      setRawHits([]);
+      return;
+    }
+    setLoading(true);
+    const seq = ++searchSeq.current;
+    const handle = setTimeout(async () => {
+      try {
+        const { invoke } = await import("@tauri-apps/api/core");
+        const hits = await invoke<SearchHit[]>("search_dir", {
+          root,
+          query: trimmed,
+          showHidden,
+          limit: RESULT_LIMIT,
+        });
+        if (seq !== searchSeq.current) return;
+        setRawHits(hits);
+        setActiveIdx(0);
+      } catch (err) {
+        if (seq !== searchSeq.current) return;
+        console.error("search_dir failed:", err);
+        setRawHits([]);
+      } finally {
+        if (seq === searchSeq.current) setLoading(false);
+      }
+    }, 200);
+    return () => clearTimeout(handle);
+  }, [q, filters.where, open, currentDir, homeDir, showHidden]);
 
-  // Search backend is not yet wired — see Phase 3 of the completion plan.
-  const results: FlatFile[] = [];
+  const results = useMemo(() => {
+    if (filters.kind === "all") return rawHits;
+    return rawHits.filter((h) => h.kind === filters.kind);
+  }, [rawHits, filters.kind]);
+
+  const open_ = (hit: SearchHit) => {
+    if (onOpen) onOpen(hit.path);
+    onClose();
+  };
+  const reveal = (hit: SearchHit) => {
+    if (onReveal) onReveal(hit.path, hit.parent_dir);
+    onClose();
+  };
 
   if (!open) return null;
 
@@ -62,7 +137,6 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
           overflow: "hidden",
         }}
       >
-        {/* Search input */}
         <div
           style={{
             padding: "14px 18px",
@@ -77,7 +151,22 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
             ref={inputRef}
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Search everywhere..."
+            onKeyDown={(e) => {
+              if (e.key === "ArrowDown") {
+                e.preventDefault();
+                setActiveIdx((i) => Math.min(results.length - 1, i + 1));
+              } else if (e.key === "ArrowUp") {
+                e.preventDefault();
+                setActiveIdx((i) => Math.max(0, i - 1));
+              } else if (e.key === "Enter") {
+                e.preventDefault();
+                const hit = results[activeIdx];
+                if (!hit) return;
+                if (e.ctrlKey || e.metaKey) reveal(hit);
+                else open_(hit);
+              }
+            }}
+            placeholder={filters.where === "home" ? "Search home..." : "Search current folder..."}
             style={{
               flex: 1,
               border: "none",
@@ -92,7 +181,6 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
           <Kbd k="esc" />
         </div>
 
-        {/* Filters */}
         <div
           style={{
             padding: "10px 16px",
@@ -112,6 +200,8 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
               { v: "text", l: "Text" },
               { v: "code", l: "Code" },
               { v: "audio", l: "Audio" },
+              { v: "video", l: "Video" },
+              { v: "folder", l: "Folders" },
             ]}
             onChange={(v) => setFilters((f) => ({ ...f, kind: v }))}
           />
@@ -121,36 +211,30 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
             options={[
               { v: "current", l: "Current folder" },
               { v: "home", l: "Home" },
-              { v: "all", l: "This Machine" },
             ]}
-            onChange={(v) => setFilters((f) => ({ ...f, where: v }))}
-          />
-          <FilterChip
-            label="Modified"
-            value={filters.modified}
-            options={[
-              { v: "any", l: "Any time" },
-              { v: "today", l: "Today" },
-              { v: "week", l: "Past week" },
-              { v: "month", l: "Past month" },
-            ]}
-            onChange={(v) => setFilters((f) => ({ ...f, modified: v }))}
+            onChange={(v) => setFilters((f) => ({ ...f, where: v as "current" | "home" }))}
           />
         </div>
 
-        {/* Results */}
         <div style={{ flex: 1, overflowY: "auto", padding: "8px 0" }}>
-          {results.length === 0 ? (
-            <div style={{ padding: 40, textAlign: "center", color: "var(--muted)" }}>No results</div>
+          {loading && q.trim() ? (
+            <div style={{ padding: 40, textAlign: "center", color: "var(--muted)" }}>Searching...</div>
+          ) : results.length === 0 ? (
+            <div style={{ padding: 40, textAlign: "center", color: "var(--muted)" }}>
+              {q.trim() ? "No results" : "Type to search"}
+            </div>
           ) : (
             results.map((r, i) => (
               <div
-                key={i}
+                key={r.id + r.path}
+                onClick={() => open_(r)}
+                onMouseEnter={() => setActiveIdx(i)}
                 style={{
                   display: "flex",
                   alignItems: "center",
                   gap: 12,
                   padding: "8px 18px",
+                  background: i === activeIdx ? "var(--paper-deep)" : "transparent",
                   borderBottom: "1px solid var(--line)",
                   cursor: "pointer",
                 }}
@@ -176,9 +260,12 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
                       fontSize: 10.5,
                       color: "var(--muted)",
                       marginTop: 1,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
                     }}
                   >
-                    ~/{r.path}
+                    {r.parent_dir}
                   </div>
                 </div>
                 <div style={{ fontFamily: "var(--font-sans)", fontSize: 10.5, color: "var(--muted)" }}>
@@ -189,7 +276,6 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
           )}
         </div>
 
-        {/* Footer */}
         <div
           style={{
             padding: "8px 16px",
@@ -204,9 +290,8 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
         >
           <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Kbd k="Enter" />open</span>
           <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Kbd k="Ctrl" /><Kbd k="Enter" />reveal</span>
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Kbd k="Tab" />filters</span>
           <span style={{ flex: 1 }} />
-          <span>{results.length} {results.length === 1 ? "match" : "matches"}</span>
+          <span>{results.length}{rawHits.length >= RESULT_LIMIT ? "+" : ""} {results.length === 1 ? "match" : "matches"}</span>
         </div>
       </div>
     </div>
@@ -217,25 +302,12 @@ function Highlight({ text, q }: { text: string; q: string }) {
   if (!q) return <>{text}</>;
   const tl = text.toLowerCase();
   const ql = q.toLowerCase();
-
-  // Find fuzzy-matched character positions
-  const matched: number[] = [];
-  let qi = 0;
-  for (let ti = 0; ti < tl.length && qi < ql.length; ti++) {
-    if (tl[ti] === ql[qi]) {
-      matched.push(ti);
-      qi++;
-    }
-  }
-  if (matched.length === 0) return <>{text}</>;
-
-  const parts: React.ReactNode[] = [];
-  let last = 0;
-  for (const idx of matched) {
-    if (idx > last) parts.push(text.slice(last, idx));
-    parts.push(
+  const idx = tl.indexOf(ql);
+  if (idx === -1) return <>{text}</>;
+  return (
+    <>
+      {text.slice(0, idx)}
       <mark
-        key={idx}
         style={{
           background: "var(--accent-soft)",
           color: "var(--paper)",
@@ -243,13 +315,11 @@ function Highlight({ text, q }: { text: string; q: string }) {
           borderRadius: 2,
         }}
       >
-        {text[idx]}
-      </mark>,
-    );
-    last = idx + 1;
-  }
-  if (last < text.length) parts.push(text.slice(last));
-  return <>{parts}</>;
+        {text.slice(idx, idx + ql.length)}
+      </mark>
+      {text.slice(idx + ql.length)}
+    </>
+  );
 }
 
 function FilterChip({

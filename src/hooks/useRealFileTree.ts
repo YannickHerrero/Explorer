@@ -165,9 +165,10 @@ export function useRealFileTree(showHidden: boolean) {
     }
   }, [histIdx, history]);
 
-  // Navigate to an absolute path (e.g. from sidebar)
+  // Navigate to an absolute path (e.g. from sidebar). If selectChildPath is
+  // provided, that child is selected after load instead of the first entry.
   const navigateToPath = useCallback(
-    async (absolutePath: string) => {
+    async (absolutePath: string, selectChildPath?: string) => {
       try {
         const entries = await invoke<RawFileEntry[]>("read_dir", {
           path: absolutePath,
@@ -194,7 +195,14 @@ export function useRealFileTree(showHidden: boolean) {
 
         setState({ rootPath: absolutePath, rootNode, pathMap, loadedDirs });
 
-        const newSel = children.length > 0 ? ["root", children[0].id] : ["root"];
+        let selectedId: string | undefined;
+        if (selectChildPath) {
+          const match = entries.find((e) => e.path === selectChildPath);
+          if (match) selectedId = rawToFileNode(match).id;
+        }
+        if (!selectedId && children.length > 0) selectedId = children[0].id;
+
+        const newSel = selectedId ? ["root", selectedId] : ["root"];
         setSelection(newSel);
         setFocusedCol(0);
         setHistory((h) => [...h.slice(0, histIdx + 1), newSel]);

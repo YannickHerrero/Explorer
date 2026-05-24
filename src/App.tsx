@@ -645,7 +645,24 @@ function App() {
           onNavigate={handleSidebarNav}
           sections={realSidebar ?? []}
         />
-        <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
+        <SearchOverlay
+          open={searchOpen}
+          onClose={() => setSearchOpen(false)}
+          currentDir={realNav.state?.rootPath ?? null}
+          homeDir={initData?.userDirs.home ?? null}
+          showHidden={showHidden}
+          onOpen={async (path) => {
+            try {
+              const { openPath } = await import("@tauri-apps/plugin-opener");
+              await openPath(path);
+            } catch (err) {
+              showToast(`Failed to open: ${err}`);
+            }
+          }}
+          onReveal={(path, parentDir) => {
+            realNav.navigateToPath(parentDir, path);
+          }}
+        />
         <TagPicker
           open={tagPickerOpen}
           onClose={() => setTagPickerOpen(false)}
