@@ -123,34 +123,6 @@ export function useKeyboardNav(opts: KeyboardNavOptions) {
         return;
       }
 
-      if (overlaysOpen) return;
-
-      // Sidebar-focused mode: ignore column nav, route arrows/letters to sidebar handlers.
-      if (sidebarFocused) {
-        if (e.key === "ArrowDown" || e.key === "j") {
-          e.preventDefault();
-          onSidebarNav("down");
-          return;
-        }
-        if (e.key === "ArrowUp" || e.key === "k") {
-          e.preventDefault();
-          onSidebarNav("up");
-          return;
-        }
-        if (e.key === "Enter" || e.key === "ArrowRight" || e.key === "l") {
-          e.preventDefault();
-          onSidebarActivate();
-          return;
-        }
-        if (e.key === "ArrowLeft" || e.key === "h") {
-          e.preventDefault();
-          onExitSidebar();
-          return;
-        }
-        // Swallow any other non-meta keys so they don't reach column nav.
-        return;
-      }
-
       if (meta && e.shiftKey && e.key.toLowerCase() === "n") {
         e.preventDefault();
         onNewFolder();
@@ -171,6 +143,33 @@ export function useKeyboardNav(opts: KeyboardNavOptions) {
       if (meta && e.key.toLowerCase() === "d") { e.preventDefault(); onDuplicate(); return; }
       if (meta && e.key.toLowerCase() === "e") { e.preventDefault(); onOpenInEditor(); return; }
       if (meta && e.key === "`") { e.preventDefault(); onOpenInTerminal(); return; }
+
+      // Sidebar-focused mode: route arrow/letter keys to sidebar handlers and
+      // swallow anything else so column nav doesn't also fire. Meta-key
+      // shortcuts above already handled themselves before reaching here.
+      if (sidebarFocused && !meta && !e.altKey) {
+        if (e.key === "ArrowDown" || e.key === "j") {
+          e.preventDefault();
+          onSidebarNav("down");
+          return;
+        }
+        if (e.key === "ArrowUp" || e.key === "k") {
+          e.preventDefault();
+          onSidebarNav("up");
+          return;
+        }
+        if (e.key === "Enter" || e.key === "ArrowRight" || e.key === "l") {
+          e.preventDefault();
+          onSidebarActivate();
+          return;
+        }
+        if (e.key === "ArrowLeft" || e.key === "h") {
+          e.preventDefault();
+          onExitSidebar();
+          return;
+        }
+        return;
+      }
 
       const columns = buildColumnsFromSelection(selection, tree);
       const currentItems = columns[focusedCol]?.items || [];

@@ -23,8 +23,10 @@ export function Sidebar({ width, activeId, onNavigate, density, sections, onDrop
         flexShrink: 0,
         background: "var(--paper-alt)",
         borderRight: "1px solid var(--line)",
+        boxShadow: hasFocus ? "inset -3px 0 0 var(--accent)" : undefined,
         overflow: "auto",
         padding: "8px 0 16px",
+        transition: "box-shadow 80ms",
       }}
     >
       {data.map((section, si) => (
