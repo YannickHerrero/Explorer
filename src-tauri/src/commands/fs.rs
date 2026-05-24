@@ -419,6 +419,17 @@ pub fn create_dir(parent: String, name: String) -> Result<String, String> {
 }
 
 #[tauri::command]
+pub fn create_file(parent: String, name: String) -> Result<String, String> {
+    validate_name(&name)?;
+    let dest = PathBuf::from(&parent).join(&name);
+    if dest.exists() {
+        return Err(format!("'{}' already exists", name));
+    }
+    fs::File::create(&dest).map_err(|e| format!("Create file failed: {}", e))?;
+    Ok(dest.to_string_lossy().to_string())
+}
+
+#[tauri::command]
 pub fn rename_path(path: String, new_name: String) -> Result<String, String> {
     validate_name(&new_name)?;
     let src = PathBuf::from(&path);

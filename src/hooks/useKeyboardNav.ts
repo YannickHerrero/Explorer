@@ -27,6 +27,7 @@ interface KeyboardNavOptions {
   onTogglePreview: () => void;
   onRename: () => void;
   onNewFolder: () => void;
+  onNewFile: () => void;
   vimNavigation: boolean;
 }
 
@@ -62,6 +63,7 @@ export function useKeyboardNav(opts: KeyboardNavOptions) {
         onTogglePreview,
         onRename,
         onNewFolder,
+        onNewFile,
         vimNavigation,
       } = ref.current;
 
@@ -96,6 +98,11 @@ export function useKeyboardNav(opts: KeyboardNavOptions) {
       if (meta && e.shiftKey && e.key.toLowerCase() === "n") {
         e.preventDefault();
         onNewFolder();
+        return;
+      }
+      if (meta && !e.shiftKey && e.key.toLowerCase() === "n") {
+        e.preventDefault();
+        onNewFile();
         return;
       }
 

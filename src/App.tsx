@@ -301,6 +301,8 @@ function App() {
       handleRenameOpen();
     } else if (cmd.id === "c-new-folder") {
       handleNewFolderOpen();
+    } else if (cmd.id === "c-new-file") {
+      handleNewFileOpen();
     } else {
       showToast(cmd.name);
     }
@@ -406,6 +408,13 @@ function App() {
     setPrompt({ kind: "new-folder", parentDir: parent });
   }, [isTauriReady, currentParentDir]);
 
+  const handleNewFileOpen = useCallback(() => {
+    if (!isTauriReady) return;
+    const parent = currentParentDir();
+    if (!parent) return;
+    setPrompt({ kind: "new-file", parentDir: parent });
+  }, [isTauriReady, currentParentDir]);
+
   const handlePromptSubmit = useCallback(async (value: string) => {
     if (!prompt) return;
     setPrompt(null);
@@ -416,6 +425,9 @@ function App() {
         showToast(`Renamed to "${value}"`);
       } else if (prompt.kind === "new-folder") {
         await invoke("create_dir", { parent: prompt.parentDir, name: value });
+        showToast(`Created "${value}"`);
+      } else if (prompt.kind === "new-file") {
+        await invoke("create_file", { parent: prompt.parentDir, name: value });
         showToast(`Created "${value}"`);
       }
       if (realNav.refreshCurrentDir) realNav.refreshCurrentDir();
@@ -480,6 +492,7 @@ function App() {
     onTogglePreview: () => handleSetPreviewOpen(!previewOpen),
     onRename: handleRenameOpen,
     onNewFolder: handleNewFolderOpen,
+    onNewFile: handleNewFileOpen,
     vimNavigation,
   });
 

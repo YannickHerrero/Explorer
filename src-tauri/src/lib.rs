@@ -1,7 +1,7 @@
 mod commands;
 
 use commands::config::{load_config, save_config};
-use commands::fs::{copy_path, copy_to_clipboard, create_dir, get_drives, get_file_meta, get_home_dir, get_user_dirs, get_wsl_distros, move_path, read_dir, rename_path, trash_path};
+use commands::fs::{copy_path, copy_to_clipboard, create_dir, create_file, get_drives, get_file_meta, get_home_dir, get_user_dirs, get_wsl_distros, move_path, read_dir, rename_path, trash_path};
 use commands::init::get_init_data;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -24,6 +24,7 @@ pub fn run() {
             move_path,
             rename_path,
             create_dir,
+            create_file,
             trash_path,
             copy_to_clipboard,
         ])
