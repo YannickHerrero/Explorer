@@ -145,7 +145,7 @@ function FilePreview({ node, diskPath, onOpen, fileTags }: { node: FileNode; dis
         ) : node.kind === "text" || node.kind === "code" ? (
           <TextPreview node={node} diskPath={diskPath} />
         ) : node.kind === "audio" ? (
-          <AudioPreview node={node} />
+          <AudioPreview diskPath={diskPath} />
         ) : (
           <div
             style={{
@@ -511,54 +511,29 @@ function TextPreview({ node, diskPath }: { node: FileNode; diskPath?: string }) 
   );
 }
 
-function AudioPreview({ node }: { node: FileNode }) {
+function AudioPreview({ diskPath }: { diskPath?: string }) {
+  const url = useAssetUrl(diskPath);
   return (
     <div
       style={{
         height: 220,
         background: "var(--paper-deep)",
         borderRadius: 4,
-        padding: 16,
+        padding: 24,
         display: "flex",
-        flexDirection: "column",
-        justifyContent: "space-between",
+        alignItems: "center",
+        justifyContent: "center",
       }}
     >
-      <div style={{ display: "flex", alignItems: "center", gap: 1.5, height: 90, flex: 1 }}>
-        {Array.from({ length: 80 }).map((_, i) => {
-          const h =
-            4 +
-            Math.abs(
-              Math.sin(i * 0.4) * 30 +
-                Math.cos(i * 0.27) * 20 +
-                Math.sin(i * 0.11) * 15,
-            );
-          return (
-            <div
-              key={i}
-              style={{
-                flex: 1,
-                height: Math.min(88, h),
-                background: i < 28 ? "var(--accent)" : "var(--line)",
-                borderRadius: 1,
-              }}
-            />
-          );
-        })}
-      </div>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          fontFamily: "var(--font-mono)",
-          fontSize: 10,
-          color: "var(--muted)",
-          marginTop: 10,
-        }}
-      >
-        <span>1:28</span>
-        <span>{node.duration}</span>
-      </div>
+      {url ? (
+        <audio
+          controls
+          src={url}
+          style={{ width: "100%" }}
+        />
+      ) : (
+        <Icon name="music" size={56} strokeWidth={1} style={{ color: "var(--muted)" }} />
+      )}
     </div>
   );
 }
