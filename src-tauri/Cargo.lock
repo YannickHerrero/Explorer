@@ -1007,7 +1007,7 @@ dependencies = [
 
 [[package]]
 name = "explorer-app"
-version = "1.0.2"
+version = "1.0.3"
 dependencies = [
  "arboard",
  "chrono",
