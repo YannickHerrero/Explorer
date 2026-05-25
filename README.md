@@ -6,7 +6,22 @@ A keyboard-driven file explorer for Windows, built with Tauri v2, React, and Typ
 
 ## Installation
 
-Download the latest Windows installer from the [Releases](https://github.com/YannickHerrero/Explorer/releases/latest) page and run `Explorer_x64-setup.exe`.
+### Scoop (recommended)
+
+```powershell
+scoop bucket add yannick https://github.com/YannickHerrero/scoop-bucket
+scoop install yannick/explorer
+```
+
+This pulls the portable bundle (`explorer-app.exe` + `WebView2Loader.dll`) into `~\scoop\apps\explorer\` and adds a `Explorer` shim on your PATH. No admin needed. Requires the system-installed WebView2 runtime (default on Windows 11).
+
+### Standalone installers
+
+Direct downloads from the [Releases](https://github.com/YannickHerrero/Explorer/releases/latest) page — pick whichever suits:
+
+- `explorer-portable.zip` — same bundle scoop uses, ~5 MB.
+- `Explorer_x64-setup.exe` — NSIS installer with the offline WebView2 bootstrapper, ~200 MB.
+- `Explorer_x64_en-US.msi` — MSI variant for managed installs.
 
 ## Features
 
@@ -24,6 +39,7 @@ Download the latest Windows installer from the [Releases](https://github.com/Yan
 - **Toggleable preview** — `Ctrl+Shift+P`
 - **Show hidden files** — `Ctrl+H`
 - **Auto-update** — Manual check from Settings; updates fetched from GitHub releases
+- **External config reload** — Backend watcher emits a `config-changed` event whenever `config.json` is rewritten by another process (e.g. a theme orchestrator), and the React frontend re-applies the new state live
 
 ## Tech Stack
 
@@ -128,7 +144,10 @@ src/
   themes/         Theme and density token definitions
   icons/          SVG icon library
 src-tauri/
-  src/commands/   Rust backend (fs operations, search, config, init)
+  src/commands/        Rust backend (fs operations, search, config, init)
+  src/config_watcher.rs  notify-based watcher on the app config dir; emits
+                       a `config-changed` Tauri event to the frontend on
+                       external rewrites of config.json
 ```
 
 ## License
