@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import type { ThemeKey, DensityKey } from "@/types";
 
 export interface PinnedFolder {
@@ -81,6 +82,25 @@ export function useConfig() {
       .catch(() => {
         setLoaded(true);
       });
+
+    // External writers (e.g. the wmenu ecosystem theme orchestrator) can
+    // overwrite config.json; the backend watcher emits "config-changed"
+    // with the parsed AppConfig, and we pick it up here. Our own saves go
+    // through the same path but produce a no-op render since the resulting
+    // object is value-equal to what we just set.
+    const unlistenPromise = listen<AppConfig>("config-changed", (e) => {
+      const c = e.payload;
+      setConfig({
+        ...DEFAULT_CONFIG,
+        ...c,
+        pinned_folders: c.pinned_folders || [],
+        tags: c.tags || DEFAULT_TAGS,
+        file_tags: c.file_tags || [],
+      });
+    });
+    return () => {
+      unlistenPromise.then((unlisten) => unlisten()).catch(() => {});
+    };
   }, []);
 
   const updateConfig = useCallback(
