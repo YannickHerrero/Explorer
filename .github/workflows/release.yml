@@ -46,7 +46,12 @@ jobs:
         run: |
           New-Item -ItemType Directory -Path explorer-portable -Force | Out-Null
           Copy-Item src-tauri/target/release/explorer-app.exe explorer-portable/
-          Copy-Item src-tauri/target/release/WebView2Loader.dll explorer-portable/
+          # webview2-com-sys's build script drops the loader DLL deeper in
+          # build/ on MSVC native builds; pick the x64 copy.
+          $loader = Get-ChildItem -Path src-tauri/target/release/build -Recurse -Filter WebView2Loader.dll |
+              Where-Object { $_.FullName -like '*\out\x64\*' } |
+              Select-Object -First 1
+          Copy-Item $loader.FullName explorer-portable/
           Compress-Archive -Path explorer-portable/* -DestinationPath explorer-portable.zip -Force
 
       - name: Upload portable bundle to release
