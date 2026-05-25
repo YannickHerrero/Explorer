@@ -35,3 +35,21 @@ jobs:
           releaseBody: "See the [commit log](https://github.com/${{ github.repository }}/commits/${{ github.ref_name }}) for details."
           releaseDraft: false
           prerelease: false
+
+      # Renamed to explorer-app.exe so `taskkill /IM` cannot match the
+      # Windows shell (explorer.exe). WebView2Loader.dll is the small (~150KB)
+      # loader shipped by webview2-com-sys; the WebView2 runtime itself is
+      # expected to be system-installed (default on Win11).
+      - name: Package portable bundle
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path explorer-portable -Force | Out-Null
+          Copy-Item src-tauri/target/release/Explorer.exe explorer-portable/explorer-app.exe
+          Copy-Item src-tauri/target/release/WebView2Loader.dll explorer-portable/
+          Compress-Archive -Path explorer-portable/* -DestinationPath explorer-portable.zip -Force
+
+      - name: Upload portable bundle to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: explorer-portable.zip
+          tag_name: ${{ github.ref_name }}
