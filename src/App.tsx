@@ -307,6 +307,8 @@ function App() {
       showToast(showHidden ? "Hidden files: off" : "Hidden files: on");
     } else if (cmd.id === "c-copy") {
       handleCopy();
+    } else if (cmd.id === "c-copy-path") {
+      handleCopyPath();
     } else if (cmd.id === "c-cut") {
       handleCut();
     } else if (cmd.id === "c-paste") {
@@ -365,11 +367,11 @@ function App() {
     setOpenWithPath(diskPath);
   }, [isTauriReady, nav.selection, realNav.state, showToast, tree]);
 
-  const handleCopy = useCallback(async () => {
+  const handleCopy = useCallback(async (override?: { path: string; node: FileNode }) => {
     if (!isTauriReady) return;
     const lastId = nav.selection[nav.selection.length - 1];
-    const diskPath = realNav.state?.pathMap.get(lastId);
-    const node = resolveSelection(tree, nav.selection);
+    const diskPath = override?.path ?? realNav.state?.pathMap.get(lastId);
+    const node = override?.node ?? resolveSelection(tree, nav.selection);
     if (diskPath && node) {
       setClipboard({ path: diskPath, name: node.name, mode: "copy" });
       try {
@@ -381,6 +383,22 @@ function App() {
       }
     }
   }, [isTauriReady, nav.selection, realNav.state, tree]);
+
+  const handleCopyPath = useCallback(async (overridePath?: string) => {
+    if (!isTauriReady) return;
+    const lastId = nav.selection[nav.selection.length - 1];
+    const diskPath = overridePath ?? realNav.state?.pathMap.get(lastId);
+    if (!diskPath) return;
+    const segments = diskPath.split("\\");
+    const fileName = segments[segments.length - 1];
+    try {
+      const { invoke } = await import("@tauri-apps/api/core");
+      await invoke("copy_path_to_clipboard", { path: diskPath });
+      showToast(`Copied path "${fileName}"`);
+    } catch (err) {
+      showToast(`Copy path failed: ${err}`);
+    }
+  }, [isTauriReady, nav.selection, realNav.state]);
 
   const handleCut = useCallback(() => {
     if (!isTauriReady) return;
@@ -565,11 +583,11 @@ function App() {
     }
   }, [prompt, realNav]);
 
-  const handleTrash = useCallback(async () => {
+  const handleTrash = useCallback(async (override?: { path: string; node: FileNode }) => {
     if (!isTauriReady) return;
     const lastId = nav.selection[nav.selection.length - 1];
-    const diskPath = realNav.state?.pathMap.get(lastId);
-    const node = resolveSelection(tree, nav.selection);
+    const diskPath = override?.path ?? realNav.state?.pathMap.get(lastId);
+    const node = override?.node ?? resolveSelection(tree, nav.selection);
     if (diskPath && node) {
       try {
         const { invoke } = await import("@tauri-apps/api/core");
@@ -582,7 +600,7 @@ function App() {
     }
   }, [isTauriReady, nav.selection, realNav.state, tree]);
 
-  const overlaysOpen = paletteOpen || folderPaletteOpen || searchOpen || settingsOpen || cheatsheetOpen || tagPickerOpen || openWithPath !== null || prompt !== null;
+  const overlaysOpen = paletteOpen || folderPaletteOpen || searchOpen || settingsOpen || cheatsheetOpen || tagPickerOpen || openWithPath !== null || contextMenu !== null || prompt !== null;
 
   useKeyboardNav({
     tree,
@@ -612,6 +630,7 @@ function App() {
     },
     onOpen: handleOpenFile,
     onCopy: handleCopy,
+    onCopyPath: handleCopyPath,
     onCut: handleCut,
     onPaste: handlePaste,
     onTrash: handleTrash,
@@ -948,7 +967,11 @@ function App() {
             y={contextMenu.y}
             onClose={() => setContextMenu(null)}
             onRun={(item) => {
-              if (item.id === "trash") handleTrash();
+              if (item.id === "trash") {
+                if (contextDiskPath && contextNode) {
+                  handleTrash({ path: contextDiskPath, node: contextNode });
+                }
+              }
               else if (item.id === "open" || item.id === "ql") handleOpenFile();
               else if (item.id === "open-with") {
                 if (contextDiskPath && contextNode) {
@@ -957,6 +980,11 @@ function App() {
               }
               else if (item.id === "ren") handleRenameOpen();
               else if (item.id === "dup") handleDuplicate();
+              else if (item.id === "cpy") {
+                const target = contextDiskPath && contextNode ? { path: contextDiskPath, node: contextNode } : undefined;
+                handleCopy(target);
+              }
+              else if (item.id === "copy-path") handleCopyPath(contextDiskPath ?? undefined);
               else if (item.id === "term") {
                 if (contextMenu?.isSidebar) {
                   const sbItem = realSidebar?.flatMap((s) => s.items).find((i) => i.id === contextMenu.nodeId);

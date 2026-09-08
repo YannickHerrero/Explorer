@@ -20,6 +20,7 @@ interface KeyboardNavOptions {
   onDismissOverlays: () => void;
   onOpen: () => void;
   onCopy: () => void;
+  onCopyPath: () => void;
   onCut: () => void;
   onPaste: () => void;
   onTrash: () => void;
@@ -67,6 +68,7 @@ export function useKeyboardNav(opts: KeyboardNavOptions) {
         onDismissOverlays,
         onOpen,
         onCopy,
+        onCopyPath,
         onCut,
         onPaste,
         onTrash,
@@ -140,7 +142,8 @@ export function useKeyboardNav(opts: KeyboardNavOptions) {
       if (meta && e.key === "[") { e.preventDefault(); goBack(); return; }
       if (meta && e.key === "]") { e.preventDefault(); goFwd(); return; }
       if (meta && e.key.toLowerCase() === "t") { e.preventDefault(); onToggleTagPicker(); return; }
-      if (meta && e.key.toLowerCase() === "c") { e.preventDefault(); onCopy(); return; }
+      if (meta && e.shiftKey && e.key.toLowerCase() === "c") { e.preventDefault(); onCopyPath(); return; }
+      if (meta && !e.shiftKey && e.key.toLowerCase() === "c") { e.preventDefault(); onCopy(); return; }
       if (meta && e.key.toLowerCase() === "x") { e.preventDefault(); onCut(); return; }
       if (meta && e.key.toLowerCase() === "v") { e.preventDefault(); onPaste(); return; }
       if (meta && e.key.toLowerCase() === "d") { e.preventDefault(); onDuplicate(); return; }
@@ -254,7 +257,12 @@ export function useKeyboardNav(opts: KeyboardNavOptions) {
       } else if (e.key === "p") {
         e.preventDefault();
         onPaste();
-      } else if (meta && (e.key === "Backspace" || e.key === "Delete")) {
+      } else if (
+        !overlaysOpen &&
+        !e.altKey &&
+        !e.shiftKey &&
+        ((!meta && e.key === "Delete") || (meta && (e.key === "Backspace" || e.key === "Delete")))
+      ) {
         e.preventDefault();
         onTrash();
       }
