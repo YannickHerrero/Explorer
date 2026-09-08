@@ -32,6 +32,16 @@ image = { version = "0.25", default-features = false, features = ["png", "jpeg",
 walkdir = "2"
 notify = "6"
 
+[target.'cfg(windows)'.dependencies]
+# Pinned to the same major as tauri's own `windows` dependency so Cargo unifies
+# them: otherwise `Window::hwnd()` returns an HWND from a different crate version
+# than the one `SHOpenWithDialog` expects.
+windows = { version = "0.61", features = [
+  "Win32_Foundation",
+  "Win32_System_Com",
+  "Win32_UI_Shell",
+] }
+
 [profile.release]
 opt-level = 3
 lto = true
