@@ -253,7 +253,7 @@ export function useKeyboardNav(opts: KeyboardNavOptions) {
       } else if (e.key === "p") {
         e.preventDefault();
         onPaste();
-      } else if (meta && (e.key === "Backspace" || e.key === "Delete")) {
+      } else if ((meta && (e.key === "Backspace" || e.key === "Delete")) || (!overlaysOpen && e.key === "Delete")) {
         e.preventDefault();
         onTrash();
       }
