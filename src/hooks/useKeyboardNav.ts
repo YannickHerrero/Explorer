@@ -95,6 +95,13 @@ export function useKeyboardNav(opts: KeyboardNavOptions) {
         return;
       }
 
+      if (e.key === "Escape") {
+        if (overlaysOpen) onDismissOverlays();
+        else if (sidebarFocused) onExitSidebar();
+        return;
+      }
+      if (overlaysOpen) return;
+
       const meta = e.metaKey || e.ctrlKey;
 
       if (meta && e.key.toLowerCase() === "k") { e.preventDefault(); onTogglePalette(); return; }
@@ -104,12 +111,6 @@ export function useKeyboardNav(opts: KeyboardNavOptions) {
       if (meta && e.key === ",") { e.preventDefault(); onToggleSettings(); return; }
       if (meta && e.key === "/") { e.preventDefault(); onToggleCheatsheet(); return; }
       if (meta && !e.shiftKey && !e.altKey && e.key.toLowerCase() === "b") { e.preventDefault(); onToggleSidebar(); return; }
-
-      if (e.key === "Escape") {
-        if (overlaysOpen) onDismissOverlays();
-        else if (sidebarFocused) onExitSidebar();
-        return;
-      }
 
       if (meta && !e.shiftKey && !e.altKey && e.key.toLowerCase() === "h") {
         e.preventDefault();

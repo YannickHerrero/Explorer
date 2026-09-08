@@ -352,12 +352,18 @@ function App() {
     }
   }, [isTauriReady, nav.selection, realNav.state]);
 
-  const handleOpenWith = useCallback((overridePath?: string) => {
+  const handleOpenWith = useCallback((override?: { path: string; node: FileNode }) => {
     if (!isTauriReady) return;
     const lastId = nav.selection[nav.selection.length - 1];
-    const diskPath = overridePath ?? realNav.state?.pathMap.get(lastId);
-    if (diskPath) setOpenWithPath(diskPath);
-  }, [isTauriReady, nav.selection, realNav.state]);
+    const diskPath = override?.path ?? realNav.state?.pathMap.get(lastId);
+    const node = override?.node ?? resolveSelection(tree, nav.selection);
+    if (!diskPath || !node) return;
+    if (node.kind === "folder") {
+      showToast("Open with is only available for files");
+      return;
+    }
+    setOpenWithPath(diskPath);
+  }, [isTauriReady, nav.selection, realNav.state, showToast, tree]);
 
   const handleCopy = useCallback(async () => {
     if (!isTauriReady) return;
@@ -576,7 +582,7 @@ function App() {
     }
   }, [isTauriReady, nav.selection, realNav.state, tree]);
 
-  const overlaysOpen = paletteOpen || folderPaletteOpen || searchOpen || settingsOpen || cheatsheetOpen || tagPickerOpen || prompt !== null;
+  const overlaysOpen = paletteOpen || folderPaletteOpen || searchOpen || settingsOpen || cheatsheetOpen || tagPickerOpen || openWithPath !== null || prompt !== null;
 
   useKeyboardNav({
     tree,
@@ -944,7 +950,11 @@ function App() {
             onRun={(item) => {
               if (item.id === "trash") handleTrash();
               else if (item.id === "open" || item.id === "ql") handleOpenFile();
-              else if (item.id === "open-with") handleOpenWith(contextDiskPath ?? undefined);
+              else if (item.id === "open-with") {
+                if (contextDiskPath && contextNode) {
+                  handleOpenWith({ path: contextDiskPath, node: contextNode });
+                }
+              }
               else if (item.id === "ren") handleRenameOpen();
               else if (item.id === "dup") handleDuplicate();
               else if (item.id === "term") {
