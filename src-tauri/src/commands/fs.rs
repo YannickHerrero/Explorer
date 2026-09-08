@@ -590,3 +590,14 @@ pub fn copy_to_clipboard(path: String, kind: String) -> Result<String, String> {
         Ok("text".to_string())
     }
 }
+
+#[tauri::command]
+pub fn copy_path_to_clipboard(path: String) -> Result<(), String> {
+    // Quoted like Windows Explorer's own Ctrl+Shift+C, so paths with spaces paste
+    // straight into a shell.
+    let quoted = format!("\"{}\"", path);
+    let mut clipboard = Clipboard::new().map_err(|e| format!("Clipboard error: {}", e))?;
+    clipboard.set_text(quoted)
+        .map_err(|e| format!("Failed to copy path: {}", e))?;
+    Ok(())
+}
