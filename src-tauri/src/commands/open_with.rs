@@ -20,21 +20,36 @@ pub struct OpenWithHandler {
     pub is_recommended: bool,
 }
 
-/// The shell work runs on the blocking pool: a plain `#[tauri::command]` would run on the
-/// main thread and stall the event loop, and `#[tauri::command(async)]` would tie up a
-/// tokio worker for as long as the (potentially very long-lived) dialog stays open.
+/// Runs shell work on a fresh OS thread so COM can always initialize it as an STA. Waiting
+/// for that thread happens on the blocking pool rather than tying up a tokio worker while a
+/// native dialog is open.
+async fn run_on_sta_thread<T, F>(operation: &'static str, task: F) -> Result<T, String>
+where
+    T: Send + 'static,
+    F: FnOnce() -> Result<T, String> + Send + 'static,
+{
+    let thread = std::thread::Builder::new()
+        .name("explorer-open-with".to_string())
+        .spawn(task)
+        .map_err(|e| format!("Failed to start {} thread: {}", operation, e))?;
+
+    tauri::async_runtime::spawn_blocking(move || thread.join())
+        .await
+        .map_err(|e| format!("Failed to wait for {} thread: {}", operation, e))?
+        .map_err(|_| format!("{} thread panicked", operation))?
+}
+
 #[tauri::command]
 pub async fn list_open_with_handlers(path: String) -> Result<Vec<OpenWithHandler>, String> {
-    tauri::async_runtime::spawn_blocking(move || imp::list(&path))
-        .await
-        .map_err(|e| format!("Failed to run Open With enumeration: {}", e))?
+    run_on_sta_thread("Open With enumeration", move || imp::list(&path)).await
 }
 
 #[tauri::command]
 pub async fn open_with_handler(path: String, handler_id: String) -> Result<(), String> {
-    tauri::async_runtime::spawn_blocking(move || imp::invoke(&path, &handler_id))
-        .await
-        .map_err(|e| format!("Failed to run Open With invocation: {}", e))?
+    run_on_sta_thread("Open With invocation", move || {
+        imp::invoke(&path, &handler_id)
+    })
+    .await
 }
 
 /// Shows the native "Open with" dialog. Returns `false` when the user cancelled.
@@ -52,9 +67,7 @@ pub async fn open_with_dialog(window: tauri::Window, path: String) -> Result<boo
         0isize
     };
 
-    tauri::async_runtime::spawn_blocking(move || imp::dialog(&path, parent))
-        .await
-        .map_err(|e| format!("Failed to run Open With dialog: {}", e))?
+    run_on_sta_thread("Open With dialog", move || imp::dialog(&path, parent)).await
 }
 
 #[cfg(windows)]
@@ -69,8 +82,9 @@ mod imp {
         COINIT_APARTMENTTHREADED,
     };
     use windows::Win32::UI::Shell::{
-        IAssocHandler, IShellItem, SHAssocEnumHandlers, SHCreateItemFromParsingName,
-        SHOpenWithDialog, ASSOC_FILTER, ASSOC_FILTER_NONE, BHID_DataObject, OAIF_EXEC, OPENASINFO,
+        BHID_DataObject, IAssocHandler, IShellItem, SHAssocEnumHandlers,
+        SHCreateItemFromParsingName, SHOpenWithDialog, ASSOC_FILTER, ASSOC_FILTER_NONE, OAIF_EXEC,
+        OPENASINFO,
     };
 
     /// Must match between `list` and `invoke`, otherwise the indexes baked into the handler
@@ -81,25 +95,20 @@ mod imp {
     /// Puts the current thread in a single-threaded apartment and balances it on drop. The
     /// shell association APIs display UI and load in-process shell extensions, so they
     /// require STA rather than MTA.
-    struct ComGuard {
-        initialized_here: bool,
-    }
+    struct ComGuard;
 
     impl ComGuard {
         fn new() -> Result<Self, String> {
             let hr = unsafe { CoInitializeEx(None, COINIT_APARTMENTTHREADED) };
             if hr == RPC_E_CHANGED_MODE {
-                // The thread is already an MTA. The calls still work, but we did not
-                // increment the counter so we must not decrement it either.
-                Ok(Self {
-                    initialized_here: false,
-                })
+                Err(
+                    "Failed to initialize COM as STA: thread uses an incompatible apartment"
+                        .to_string(),
+                )
             } else if hr.is_ok() {
                 // S_FALSE means "already initialized" and still needs a matching
                 // CoUninitialize, so both success codes are treated the same.
-                Ok(Self {
-                    initialized_here: true,
-                })
+                Ok(Self)
             } else {
                 Err(format!("Failed to initialize COM: {}", WinError::from(hr)))
             }
@@ -108,9 +117,7 @@ mod imp {
 
     impl Drop for ComGuard {
         fn drop(&mut self) {
-            if self.initialized_here {
-                unsafe { CoUninitialize() };
-            }
+            unsafe { CoUninitialize() };
         }
     }
 
