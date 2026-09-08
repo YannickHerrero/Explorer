@@ -9,6 +9,7 @@ import { Settings } from "@/overlays/Settings";
 import { Cheatsheet } from "@/overlays/Cheatsheet";
 import { ContextMenu } from "@/overlays/ContextMenu";
 import { FolderPalette } from "@/overlays/FolderPalette";
+import { OpenWithPalette } from "@/overlays/OpenWithPalette";
 import { TagPicker } from "@/overlays/TagPicker";
 import { PromptModal } from "@/overlays/PromptModal";
 import { Icon } from "@/icons/Icon";
@@ -211,6 +212,7 @@ function App() {
   const [toast, setToast] = useState<string | null>(null);
   const [clipboard, setClipboard] = useState<{ path: string; name: string; mode: "copy" | "cut" } | null>(null);
   const [tagPickerOpen, setTagPickerOpen] = useState(false);
+  const [openWithPath, setOpenWithPath] = useState<string | null>(null);
   const [prompt, setPrompt] = useState<PromptState | null>(null);
   const [activeTagFilter, setActiveTagFilter] = useState<string | null>(null);
   const [sidebarFocused, setSidebarFocused] = useState(false);
@@ -325,6 +327,8 @@ function App() {
       handleNewFileOpen();
     } else if (cmd.id === "c-duplicate") {
       handleDuplicate();
+    } else if (cmd.id === "c-open-with") {
+      handleOpenWith();
     } else if (cmd.id === "c-open-editor") {
       handleOpenInEditor();
     } else if (cmd.id === "c-open-terminal") {
@@ -349,6 +353,19 @@ function App() {
       }
     }
   }, [isTauriReady, nav.selection, realNav.state]);
+
+  const handleOpenWith = useCallback((override?: { path: string; node: FileNode }) => {
+    if (!isTauriReady) return;
+    const lastId = nav.selection[nav.selection.length - 1];
+    const diskPath = override?.path ?? realNav.state?.pathMap.get(lastId);
+    const node = override?.node ?? resolveSelection(tree, nav.selection);
+    if (!diskPath || !node) return;
+    if (node.kind === "folder") {
+      showToast("Open with is only available for files");
+      return;
+    }
+    setOpenWithPath(diskPath);
+  }, [isTauriReady, nav.selection, realNav.state, showToast, tree]);
 
   const handleCopy = useCallback(async (override?: { path: string; node: FileNode }) => {
     if (!isTauriReady) return;
@@ -583,7 +600,7 @@ function App() {
     }
   }, [isTauriReady, nav.selection, realNav.state, tree]);
 
-  const overlaysOpen = paletteOpen || folderPaletteOpen || searchOpen || settingsOpen || cheatsheetOpen || tagPickerOpen || contextMenu !== null || prompt !== null;
+  const overlaysOpen = paletteOpen || folderPaletteOpen || searchOpen || settingsOpen || cheatsheetOpen || tagPickerOpen || openWithPath !== null || contextMenu !== null || prompt !== null;
 
   useKeyboardNav({
     tree,
@@ -607,6 +624,7 @@ function App() {
       setSettingsOpen(false);
       setCheatsheetOpen(false);
       setTagPickerOpen(false);
+      setOpenWithPath(null);
       setContextMenu(null);
       setPrompt(null);
     },
@@ -628,6 +646,7 @@ function App() {
     onDuplicate: handleDuplicate,
     onOpenInEditor: handleOpenInEditor,
     onOpenInTerminal: () => handleOpenInTerminal(),
+    onOpenWith: () => handleOpenWith(),
     vimNavigation,
     sidebarOpen,
     sidebarFocused,
@@ -858,6 +877,13 @@ function App() {
           onNavigate={handleSidebarNav}
           sections={realSidebar ?? []}
         />
+
+        <OpenWithPalette
+          open={openWithPath !== null}
+          path={openWithPath}
+          onClose={() => setOpenWithPath(null)}
+          onError={showToast}
+        />
         <SearchOverlay
           open={searchOpen}
           onClose={() => setSearchOpen(false)}
@@ -947,6 +973,11 @@ function App() {
                 }
               }
               else if (item.id === "open" || item.id === "ql") handleOpenFile();
+              else if (item.id === "open-with") {
+                if (contextDiskPath && contextNode) {
+                  handleOpenWith({ path: contextDiskPath, node: contextNode });
+                }
+              }
               else if (item.id === "ren") handleRenameOpen();
               else if (item.id === "dup") handleDuplicate();
               else if (item.id === "cpy") {

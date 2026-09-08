@@ -45,11 +45,17 @@ export function ContextMenu({ x, y, onClose, onRun, isFolder, isSidebar, isPinne
       ]);
     }
   } else {
-    sections.push([
+    const openSection: MenuItem[] = [
       { id: "open", name: "Open", kbd: ["Ctrl", "Enter"], icon: "folder-open" },
+    ];
+    if (!isFolder) {
+      openSection.push({ id: "open-with", name: "Open with...", kbd: ["Shift+Ctrl", "O"], icon: "share" });
+    }
+    openSection.push(
       { id: "ql", name: "Quick Look", kbd: ["Space"], icon: "eye" },
       { id: "term", name: "Open in Terminal", kbd: ["Ctrl", "`"], icon: "terminal" },
-    ]);
+    );
+    sections.push(openSection);
 
     if (isFolder && onTogglePin) {
       sections.push([

@@ -33,6 +33,7 @@ interface KeyboardNavOptions {
   onDuplicate: () => void;
   onOpenInEditor: () => void;
   onOpenInTerminal: () => void;
+  onOpenWith: () => void;
   vimNavigation: boolean;
   sidebarOpen: boolean;
   sidebarFocused: boolean;
@@ -80,6 +81,7 @@ export function useKeyboardNav(opts: KeyboardNavOptions) {
         onDuplicate,
         onOpenInEditor,
         onOpenInTerminal,
+        onOpenWith,
         vimNavigation,
         sidebarOpen,
         sidebarFocused,
@@ -95,6 +97,13 @@ export function useKeyboardNav(opts: KeyboardNavOptions) {
         return;
       }
 
+      if (e.key === "Escape") {
+        if (overlaysOpen) onDismissOverlays();
+        else if (sidebarFocused) onExitSidebar();
+        return;
+      }
+      if (overlaysOpen) return;
+
       const meta = e.metaKey || e.ctrlKey;
 
       if (meta && e.key.toLowerCase() === "k") { e.preventDefault(); onTogglePalette(); return; }
@@ -104,12 +113,6 @@ export function useKeyboardNav(opts: KeyboardNavOptions) {
       if (meta && e.key === ",") { e.preventDefault(); onToggleSettings(); return; }
       if (meta && e.key === "/") { e.preventDefault(); onToggleCheatsheet(); return; }
       if (meta && !e.shiftKey && !e.altKey && e.key.toLowerCase() === "b") { e.preventDefault(); onToggleSidebar(); return; }
-
-      if (e.key === "Escape") {
-        if (overlaysOpen) onDismissOverlays();
-        else if (sidebarFocused) onExitSidebar();
-        return;
-      }
 
       if (meta && !e.shiftKey && !e.altKey && e.key.toLowerCase() === "h") {
         e.preventDefault();
@@ -146,6 +149,7 @@ export function useKeyboardNav(opts: KeyboardNavOptions) {
       if (meta && e.key.toLowerCase() === "d") { e.preventDefault(); onDuplicate(); return; }
       if (meta && e.key.toLowerCase() === "e") { e.preventDefault(); onOpenInEditor(); return; }
       if (meta && e.key === "`") { e.preventDefault(); onOpenInTerminal(); return; }
+      if (meta && e.shiftKey && e.key.toLowerCase() === "o") { e.preventDefault(); onOpenWith(); return; }
 
       // Sidebar-focused mode: route arrow/letter keys to sidebar handlers and
       // swallow anything else so column nav doesn't also fire. Meta-key

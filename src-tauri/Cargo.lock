@@ -1023,6 +1023,7 @@ dependencies = [
  "tauri-plugin-updater",
  "trash",
  "walkdir",
+ "windows 0.61.3",
 ]
 
 [[package]]
