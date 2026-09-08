@@ -70,6 +70,7 @@ export function ContextMenu({ x, y, onClose, onRun, isFolder, isSidebar, isPinne
 
     sections.push([
       { id: "cpy", name: "Copy", kbd: ["Ctrl", "C"], icon: "copy" },
+      { id: "copy-path", name: "Copy Path", kbd: ["Shift+Ctrl", "C"], icon: "copy" },
     ]);
 
     sections.push([
