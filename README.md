@@ -98,7 +98,8 @@ See `Makefile` for the individual targets.
 | `Ctrl+Shift+N` | New folder |
 | `Ctrl+D` | Duplicate |
 | `Ctrl+C` / `Ctrl+X` / `Ctrl+V` | Copy / Cut / Paste |
-| `Ctrl+Del` or `Ctrl+Backspace` | Move to Trash |
+| `Ctrl+Shift+C` | Copy full path (quoted) |
+| `Del` (or `Ctrl+Del` / `Ctrl+Backspace`) | Move to Trash |
 | `Ctrl+T` | Add tag |
 
 ### Open in…
