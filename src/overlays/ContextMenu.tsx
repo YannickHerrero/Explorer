@@ -74,7 +74,7 @@ export function ContextMenu({ x, y, onClose, onRun, isFolder, isSidebar, isPinne
     ]);
 
     sections.push([
-      { id: "trash", name: "Move to Trash", kbd: ["Ctrl", "Del"], icon: "trash", danger: true },
+      { id: "trash", name: "Move to Trash", kbd: ["Del"], icon: "trash", danger: true },
     ]);
   }
 
