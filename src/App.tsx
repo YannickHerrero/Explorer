@@ -566,11 +566,11 @@ function App() {
     }
   }, [prompt, realNav]);
 
-  const handleTrash = useCallback(async () => {
+  const handleTrash = useCallback(async (override?: { path: string; node: FileNode }) => {
     if (!isTauriReady) return;
     const lastId = nav.selection[nav.selection.length - 1];
-    const diskPath = realNav.state?.pathMap.get(lastId);
-    const node = resolveSelection(tree, nav.selection);
+    const diskPath = override?.path ?? realNav.state?.pathMap.get(lastId);
+    const node = override?.node ?? resolveSelection(tree, nav.selection);
     if (diskPath && node) {
       try {
         const { invoke } = await import("@tauri-apps/api/core");
@@ -583,7 +583,7 @@ function App() {
     }
   }, [isTauriReady, nav.selection, realNav.state, tree]);
 
-  const overlaysOpen = paletteOpen || folderPaletteOpen || searchOpen || settingsOpen || cheatsheetOpen || tagPickerOpen || prompt !== null;
+  const overlaysOpen = paletteOpen || folderPaletteOpen || searchOpen || settingsOpen || cheatsheetOpen || tagPickerOpen || contextMenu !== null || prompt !== null;
 
   useKeyboardNav({
     tree,
@@ -941,7 +941,11 @@ function App() {
             y={contextMenu.y}
             onClose={() => setContextMenu(null)}
             onRun={(item) => {
-              if (item.id === "trash") handleTrash();
+              if (item.id === "trash") {
+                if (contextDiskPath && contextNode) {
+                  handleTrash({ path: contextDiskPath, node: contextNode });
+                }
+              }
               else if (item.id === "open" || item.id === "ql") handleOpenFile();
               else if (item.id === "ren") handleRenameOpen();
               else if (item.id === "dup") handleDuplicate();
