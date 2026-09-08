@@ -9,6 +9,7 @@ import { Settings } from "@/overlays/Settings";
 import { Cheatsheet } from "@/overlays/Cheatsheet";
 import { ContextMenu } from "@/overlays/ContextMenu";
 import { FolderPalette } from "@/overlays/FolderPalette";
+import { OpenWithPalette } from "@/overlays/OpenWithPalette";
 import { TagPicker } from "@/overlays/TagPicker";
 import { PromptModal } from "@/overlays/PromptModal";
 import { Icon } from "@/icons/Icon";
@@ -211,6 +212,7 @@ function App() {
   const [toast, setToast] = useState<string | null>(null);
   const [clipboard, setClipboard] = useState<{ path: string; name: string; mode: "copy" | "cut" } | null>(null);
   const [tagPickerOpen, setTagPickerOpen] = useState(false);
+  const [openWithPath, setOpenWithPath] = useState<string | null>(null);
   const [prompt, setPrompt] = useState<PromptState | null>(null);
   const [activeTagFilter, setActiveTagFilter] = useState<string | null>(null);
   const [sidebarFocused, setSidebarFocused] = useState(false);
@@ -323,6 +325,8 @@ function App() {
       handleNewFileOpen();
     } else if (cmd.id === "c-duplicate") {
       handleDuplicate();
+    } else if (cmd.id === "c-open-with") {
+      handleOpenWith();
     } else if (cmd.id === "c-open-editor") {
       handleOpenInEditor();
     } else if (cmd.id === "c-open-terminal") {
@@ -346,6 +350,13 @@ function App() {
         showToast(`Failed to open: ${err}`);
       }
     }
+  }, [isTauriReady, nav.selection, realNav.state]);
+
+  const handleOpenWith = useCallback((overridePath?: string) => {
+    if (!isTauriReady) return;
+    const lastId = nav.selection[nav.selection.length - 1];
+    const diskPath = overridePath ?? realNav.state?.pathMap.get(lastId);
+    if (diskPath) setOpenWithPath(diskPath);
   }, [isTauriReady, nav.selection, realNav.state]);
 
   const handleCopy = useCallback(async () => {
@@ -589,6 +600,7 @@ function App() {
       setSettingsOpen(false);
       setCheatsheetOpen(false);
       setTagPickerOpen(false);
+      setOpenWithPath(null);
       setContextMenu(null);
       setPrompt(null);
     },
@@ -609,6 +621,7 @@ function App() {
     onDuplicate: handleDuplicate,
     onOpenInEditor: handleOpenInEditor,
     onOpenInTerminal: () => handleOpenInTerminal(),
+    onOpenWith: () => handleOpenWith(),
     vimNavigation,
     sidebarOpen,
     sidebarFocused,
@@ -839,6 +852,13 @@ function App() {
           onNavigate={handleSidebarNav}
           sections={realSidebar ?? []}
         />
+
+        <OpenWithPalette
+          open={openWithPath !== null}
+          path={openWithPath}
+          onClose={() => setOpenWithPath(null)}
+          onError={showToast}
+        />
         <SearchOverlay
           open={searchOpen}
           onClose={() => setSearchOpen(false)}
@@ -924,6 +944,7 @@ function App() {
             onRun={(item) => {
               if (item.id === "trash") handleTrash();
               else if (item.id === "open" || item.id === "ql") handleOpenFile();
+              else if (item.id === "open-with") handleOpenWith(contextDiskPath ?? undefined);
               else if (item.id === "ren") handleRenameOpen();
               else if (item.id === "dup") handleDuplicate();
               else if (item.id === "term") {

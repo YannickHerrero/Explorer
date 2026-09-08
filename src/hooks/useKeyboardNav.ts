@@ -32,6 +32,7 @@ interface KeyboardNavOptions {
   onDuplicate: () => void;
   onOpenInEditor: () => void;
   onOpenInTerminal: () => void;
+  onOpenWith: () => void;
   vimNavigation: boolean;
   sidebarOpen: boolean;
   sidebarFocused: boolean;
@@ -78,6 +79,7 @@ export function useKeyboardNav(opts: KeyboardNavOptions) {
         onDuplicate,
         onOpenInEditor,
         onOpenInTerminal,
+        onOpenWith,
         vimNavigation,
         sidebarOpen,
         sidebarFocused,
@@ -143,6 +145,7 @@ export function useKeyboardNav(opts: KeyboardNavOptions) {
       if (meta && e.key.toLowerCase() === "d") { e.preventDefault(); onDuplicate(); return; }
       if (meta && e.key.toLowerCase() === "e") { e.preventDefault(); onOpenInEditor(); return; }
       if (meta && e.key === "`") { e.preventDefault(); onOpenInTerminal(); return; }
+      if (meta && e.shiftKey && e.key.toLowerCase() === "o") { e.preventDefault(); onOpenWith(); return; }
 
       // Sidebar-focused mode: route arrow/letter keys to sidebar handlers and
       // swallow anything else so column nav doesn't also fire. Meta-key
